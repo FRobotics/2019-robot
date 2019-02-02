@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.PWMTalonSRX;
 import edu.wpi.first.wpilibj.SpeedController;
 
 public class DriveTrain {
@@ -35,9 +34,9 @@ public class DriveTrain {
         this.rateLimit = rateLimit;
     }
 
-    public void init(int leftMotorPort, int rightMotorPort) {
-        this.leftMotor = new PWMTalonSRX(leftMotorPort);
-        this.rightMotor = new PWMTalonSRX(rightMotorPort);
+    public void init(SpeedController leftMotor, SpeedController rightMotor) {
+        this.leftMotor = leftMotor;
+        this.rightMotor = rightMotor;
     }
 
     /**

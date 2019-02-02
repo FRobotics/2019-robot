@@ -7,7 +7,9 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.PWMTalonSRX;
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.subsystems.DriveTrain;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -17,12 +19,20 @@ import edu.wpi.first.wpilibj.TimedRobot;
  * project.
  */
 public class Robot extends TimedRobot {
+
+  private DriveTrain driveTrain;
+
+  public Robot() {
+    this.driveTrain = new DriveTrain();
+  }
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
   @Override
   public void robotInit() {
+    this.driveTrain.init(new PWMTalonSRX(0), new PWMTalonSRX(0));
   }
 
   @Override
