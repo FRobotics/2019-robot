@@ -10,7 +10,7 @@ public class DriveTrain {
     /**
      * Whether the motor outputs should be inverted or not
      */
-    private boolean invert;
+    private boolean inverted;
 
     /**
      * The max change in speed per call.
@@ -19,8 +19,20 @@ public class DriveTrain {
     private double rateLimit;
 
     public DriveTrain() {
-        this.invert = false;
-        this.rateLimit = 0;
+        this(false, 0);
+    }
+
+    public DriveTrain(boolean inverted) {
+        this(inverted, 0);
+    }
+
+    public DriveTrain(double rateLimit) {
+        this(false, rateLimit);
+    }
+
+    public DriveTrain(boolean inverted, double rateLimit) {
+        this.inverted = inverted;
+        this.rateLimit = rateLimit;
     }
 
     public void init(int leftMotorPort, int rightMotorPort) {
@@ -33,7 +45,7 @@ public class DriveTrain {
      */
     public void setLeftMotorSpeed(double speed) {
         //apply limiting once ready
-        this.leftMotor.set(invert ? -speed : speed);
+        this.leftMotor.set(inverted ? -speed : speed);
     }
 
     /**
@@ -41,7 +53,7 @@ public class DriveTrain {
      */
     public void setRightMotorSpeed(double speed) {
         //apply limiting once ready
-        this.rightMotor.set(invert ? speed : -speed);
+        this.rightMotor.set(inverted ? speed : -speed);
     }
 
     /**
@@ -68,5 +80,21 @@ public class DriveTrain {
      */
     public void stop() {
         this.setSpeed(0);
+    }
+
+    public boolean isInverted() {
+        return this.inverted;
+    }
+
+    public void setInverted(boolean inverted) {
+        this.inverted = inverted;
+    }
+
+    public double getRateLimit() {
+        return this.rateLimit;
+    }
+
+    public void setRateLimit(double rateLimit) {
+        this.rateLimit = rateLimit;
     }
 }
