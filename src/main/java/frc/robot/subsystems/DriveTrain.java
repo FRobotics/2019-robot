@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.SpeedController;
+import frc.util.RateLimiter;
 
 public class DriveTrain {
 
@@ -11,18 +12,15 @@ public class DriveTrain {
      */
     private boolean inverted;
 
-    /**
-     * The max change in speed per call.
-     * 0 means no limit.
-     */
-    private double rateLimit;
+    private RateLimiter rightRateLimiter;
+    private RateLimiter leftRateLimiter;
 
     public DriveTrain() {
-        this(false, 0);
+        this(false, -1);
     }
 
     public DriveTrain(boolean inverted) {
-        this(inverted, 0);
+        this(inverted, -1);
     }
 
     public DriveTrain(double rateLimit) {
@@ -31,7 +29,8 @@ public class DriveTrain {
 
     public DriveTrain(boolean inverted, double rateLimit) {
         this.inverted = inverted;
-        this.rateLimit = rateLimit;
+        this.rightRateLimiter = new RateLimiter(rateLimit);
+        this.leftRateLimiter = new RateLimiter(rateLimit);
     }
 
     public void init(SpeedController leftMotor, SpeedController rightMotor) {
@@ -43,7 +42,7 @@ public class DriveTrain {
      * Sets the left motor's speed
      */
     public void setLeftMotorSpeed(double speed) {
-        //apply limiting once ready
+        speed = leftRateLimiter.get(speed);
         this.leftMotor.set(inverted ? -speed : speed);
     }
 
@@ -51,7 +50,7 @@ public class DriveTrain {
      * Sets the right motor's speed and inverses it for simplicity
      */
     public void setRightMotorSpeed(double speed) {
-        //apply limiting once ready
+        speed = rightRateLimiter.get(speed);
         this.rightMotor.set(inverted ? speed : -speed);
     }
 
@@ -90,10 +89,10 @@ public class DriveTrain {
     }
 
     public double getRateLimit() {
-        return this.rateLimit;
+        return this.rightRateLimiter.getRate();
     }
 
     public void setRateLimit(double rateLimit) {
-        this.rateLimit = rateLimit;
+        this.rightRateLimiter = new RateLimiter(rateLimit);
     }
 }
