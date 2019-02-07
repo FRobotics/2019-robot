@@ -26,6 +26,9 @@ public class Robot extends TimedRobot {
     this.driveTrain = new DriveTrain();
   }
 
+  /**
+   * Resets all of the subsystems to their base state
+   */
   public void reset() {
     this.driveTrain.reset();
   }

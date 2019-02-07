@@ -15,7 +15,9 @@ public class RateLimiter {
     }
 
     /**
-     * get a value based on a target and the last value using the rate
+     * Get a value based on a target and the last value using the rate
+     * @param targetValue - the target value to try to reach
+     * @return the value limited by the rate
      */
     public double get(double targetValue) {
         if(rate == -1) {
@@ -31,10 +33,17 @@ public class RateLimiter {
         return targetValue;
     }
 
+    /**
+     * Sets the last value back to 0
+     */
     public void reset() {
         this.reset(0);
     }
 
+    /**
+     * Sets the last value to startValue
+     * @param startValue - the value to reset to
+     */
     public void reset(double startValue) {
         this.lastValue = startValue;
     }
