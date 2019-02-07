@@ -26,6 +26,10 @@ public class Robot extends TimedRobot {
     this.driveTrain = new DriveTrain();
   }
 
+  public void reset() {
+    this.driveTrain.reset();
+  }
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -37,6 +41,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    reset();
   }
 
   @Override
@@ -45,6 +50,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    reset();
   }
 
   @Override
@@ -53,6 +59,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
+    reset();
   }
 
   @Override

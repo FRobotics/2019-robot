@@ -80,6 +80,11 @@ public class DriveTrain {
         this.setSpeed(0);
     }
 
+    public void reset() {
+        this.leftRateLimiter.reset();
+        this.rightRateLimiter.reset();
+    }
+
     public boolean isInverted() {
         return this.inverted;
     }

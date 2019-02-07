@@ -31,6 +31,14 @@ public class RateLimiter {
         return targetValue;
     }
 
+    public void reset() {
+        this.reset(0);
+    }
+
+    public void reset(double startValue) {
+        this.lastValue = startValue;
+    }
+
     public double getRate() {
         return this.rate;
     }
