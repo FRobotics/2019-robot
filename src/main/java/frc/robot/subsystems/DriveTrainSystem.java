@@ -1,12 +1,12 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.SpeedController;
+import frc.robot.subsystems.base.Motor;
 import frc.util.RateLimiter;
 
 public class DriveTrainSystem {
 
-    private SpeedController leftMotor;
-    private SpeedController rightMotor;
+    private Motor leftMotor;
+    private Motor rightMotor;
     /**
      * Whether the motor outputs should be inverted or not
      */
@@ -33,7 +33,7 @@ public class DriveTrainSystem {
         this.leftRateLimiter = new RateLimiter(rateLimit);
     }
 
-    public void init(SpeedController leftMotor, SpeedController rightMotor) {
+    public void init(Motor leftMotor, Motor rightMotor) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
     }
@@ -44,7 +44,7 @@ public class DriveTrainSystem {
      */
     public void setLeftMotorSpeed(double speed) {
         speed = leftRateLimiter.get(speed);
-        this.leftMotor.set(inverted ? -speed : speed);
+        this.leftMotor.setSpeed(inverted ? -speed : speed);
     }
 
     /**
@@ -53,7 +53,7 @@ public class DriveTrainSystem {
      */
     public void setRightMotorSpeed(double speed) {
         speed = rightRateLimiter.get(speed);
-        this.rightMotor.set(inverted ? speed : -speed);
+        this.rightMotor.setSpeed(inverted ? speed : -speed);
     }
 
     /**

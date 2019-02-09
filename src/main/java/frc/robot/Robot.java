@@ -7,8 +7,9 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PWMTalonSRX;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
@@ -17,6 +18,7 @@ import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
+import frc.robot.subsystems.base.CANTalonSRXMotor;
 import frc.util.CountdownTimer;
 
 /**
@@ -78,9 +80,9 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     // TODO: put in channel ids
-    this.driveTrain.init(new PWMTalonSRX(0), new PWMTalonSRX(0));
-    this.ballSystem.init(new PWMTalonSRX(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
-    this.elevator.init(new PWMTalonSRX(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
+    this.driveTrain.init(new CANTalonSRXMotor(0), new CANTalonSRXMotor(0));
+    this.ballSystem.init(new CANTalonSRXMotor(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
+    this.elevator.init(new CANTalonSRXMotor(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.hatchSystem.init(new DoubleSolenoid(0, 0));
   }
 
