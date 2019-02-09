@@ -7,28 +7,15 @@ public class DriveTrainSystem {
 
     private Motor leftMotor;
     private Motor rightMotor;
-    /**
-     * Whether the motor outputs should be inverted or not
-     */
-    private boolean inverted;
 
     private RateLimiter rightRateLimiter;
     private RateLimiter leftRateLimiter;
 
     public DriveTrainSystem() {
-        this(false, -1);
-    }
-
-    public DriveTrainSystem(boolean inverted) {
-        this(inverted, -1);
+        this(-1);
     }
 
     public DriveTrainSystem(double rateLimit) {
-        this(false, rateLimit);
-    }
-
-    public DriveTrainSystem(boolean inverted, double rateLimit) {
-        this.inverted = inverted;
         this.rightRateLimiter = new RateLimiter(rateLimit);
         this.leftRateLimiter = new RateLimiter(rateLimit);
     }
@@ -36,6 +23,7 @@ public class DriveTrainSystem {
     public void init(Motor leftMotor, Motor rightMotor) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
+        this.rightMotor.setInverted(true);
     }
 
     /**
@@ -44,16 +32,16 @@ public class DriveTrainSystem {
      */
     public void setLeftMotorSpeed(double speed) {
         speed = leftRateLimiter.get(speed);
-        this.leftMotor.setSpeed(inverted ? -speed : speed);
+        this.leftMotor.setSpeed(speed);
     }
 
     /**
-     * Sets the right motor's speed and inverses it for simplicity
-     * @param speed - the speed to set the right motor to; should be -1 to +1
+     * Sets the right motor's speed
+     * @param speed - the speed to set the left motor to; should be -1 to +1
      */
     public void setRightMotorSpeed(double speed) {
         speed = rightRateLimiter.get(speed);
-        this.rightMotor.setSpeed(inverted ? speed : -speed);
+        this.rightMotor.setSpeed(speed);
     }
 
     /**
@@ -90,14 +78,6 @@ public class DriveTrainSystem {
     public void reset() {
         this.leftRateLimiter.reset();
         this.rightRateLimiter.reset();
-    }
-
-    public boolean isInverted() {
-        return this.inverted;
-    }
-
-    public void setInverted(boolean inverted) {
-        this.inverted = inverted;
     }
 
     public double getRateLimit() {

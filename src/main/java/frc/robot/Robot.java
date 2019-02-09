@@ -18,7 +18,8 @@ import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
-import frc.robot.subsystems.base.CANTalonSRXMotor;
+import frc.robot.subsystems.base.CANMotor;
+import frc.robot.subsystems.base.CANMotorPair;
 import frc.util.CountdownTimer;
 
 /**
@@ -80,9 +81,10 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     // TODO: put in channel ids
-    this.driveTrain.init(new CANTalonSRXMotor(0), new CANTalonSRXMotor(0));
-    this.ballSystem.init(new CANTalonSRXMotor(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
-    this.elevator.init(new CANTalonSRXMotor(0), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
+    this.driveTrain.init(new CANMotorPair(new TalonSRX(14), new TalonSRX(13)),
+        new CANMotorPair(new TalonSRX(10), new TalonSRX(12)));
+    this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
+    this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.hatchSystem.init(new DoubleSolenoid(0, 0));
   }
 
