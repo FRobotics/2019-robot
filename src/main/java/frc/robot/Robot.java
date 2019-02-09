@@ -19,7 +19,7 @@ import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
 import frc.robot.subsystems.base.CANMotor;
-import frc.robot.subsystems.base.CANMotorPair;
+import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.util.CountdownTimer;
 
 /**
@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
   }
 
   private TeleopState teleopState;
-  private CountdownTimer modeTimer;
+  private CountdownTimer stateTimer;
 
   public Robot() {
     this.driveTrain = new DriveTrainSystem();
@@ -80,9 +80,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    // TODO: put in channel ids
-    this.driveTrain.init(new CANMotorPair(new TalonSRX(14), new TalonSRX(13)),
-        new CANMotorPair(new TalonSRX(10), new TalonSRX(12)));
+    // TODO: put in correct channel ids
+    this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
+        new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)));
     this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.hatchSystem.init(new DoubleSolenoid(0, 0));
@@ -98,7 +98,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    this.modeTimer = new CountdownTimer(1000);
+    this.stateTimer = new CountdownTimer(1000);
   }
 
   @Override
@@ -107,15 +107,15 @@ public class Robot extends TimedRobot {
     default:
     case RESET:
       this.reset();
-      if (modeTimer.isFinished() && movementController.buttonDown(Button.START)) {
+      if (stateTimer.isFinished() && movementController.buttonDown(Button.START)) {
         this.teleopState = TeleopState.START;
       }
       break;
     case START:
       this.elevator.lowerArms();
-      if (modeTimer.isFinished()) {
+      if (stateTimer.isFinished()) {
         this.teleopState = TeleopState.DEFAULT;
-        this.modeTimer.start();
+        this.stateTimer.start();
       }
       break;
     case DEFAULT:
@@ -159,7 +159,7 @@ public class Robot extends TimedRobot {
       // reset
       if (movementController.buttonDown(Button.BACK)) {
         this.teleopState = TeleopState.RESET;
-        this.modeTimer.start();
+        this.stateTimer.start();
       }
       break;
     }
