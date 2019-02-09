@@ -1,12 +1,12 @@
 package frc.robot.subsystems;
 
-import frc.robot.subsystems.base.Motor;
+import frc.robot.subsystems.base.EncoderMotor;
 import frc.util.RateLimiter;
 
 public class DriveTrainSystem {
 
-    private Motor leftMotor;
-    private Motor rightMotor;
+    private EncoderMotor leftMotor;
+    private EncoderMotor rightMotor;
 
     private RateLimiter rightRateLimiter;
     private RateLimiter leftRateLimiter;
@@ -20,7 +20,7 @@ public class DriveTrainSystem {
         this.leftRateLimiter = new RateLimiter(rateLimit);
     }
 
-    public void init(Motor leftMotor, Motor rightMotor) {
+    public void init(EncoderMotor leftMotor, EncoderMotor rightMotor) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
         this.rightMotor.setInverted(true);
@@ -86,5 +86,13 @@ public class DriveTrainSystem {
 
     public void setRateLimit(double rateLimit) {
         this.rightRateLimiter = new RateLimiter(rateLimit);
+    }
+
+    public double getLeftMotorSpeed() {
+        return this.leftMotor.getSpeed();
+    }
+
+    public double getRightMotorSpeed() {
+        return this.rightMotor.getSpeed();
     }
 }

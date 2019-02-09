@@ -7,7 +7,7 @@ import com.ctre.phoenix.motorcontrol.can.BaseMotorController;
 
 import frc.robot.Constants;
 
-public class CANDriveMotorPair implements Motor {
+public class CANDriveMotorPair implements EncoderMotor {
 
     private BaseMotorController master;
     private BaseMotorController follower;
@@ -22,14 +22,14 @@ public class CANDriveMotorPair implements Motor {
         master.setSensorPhase(false);
         follower.setSensorPhase(false);
 
-        int slotIdx = Constants.CANDrive.PID_LOOP_INDEX;
-        int timeoutMS = Constants.CANDrive.TIMEOUT_MS;
+        int slotIdx = Constants.Drive.PID_LOOP_INDEX;
+        int timeoutMS = Constants.Drive.TIMEOUT_MS;
 
-        master.config_kF(slotIdx, Constants.CANDrive.F, timeoutMS);
-        master.config_kP(slotIdx, Constants.CANDrive.P, timeoutMS);
-        master.config_kI(slotIdx, Constants.CANDrive.I, timeoutMS);
-        master.config_kD(slotIdx, Constants.CANDrive.D, timeoutMS);
-        master.config_IntegralZone(slotIdx, Constants.CANDrive.INTEGRAL_ZONE, timeoutMS);
+        master.config_kF(slotIdx, Constants.Drive.F, timeoutMS);
+        master.config_kP(slotIdx, Constants.Drive.P, timeoutMS);
+        master.config_kI(slotIdx, Constants.Drive.I, timeoutMS);
+        master.config_kD(slotIdx, Constants.Drive.D, timeoutMS);
+        master.config_IntegralZone(slotIdx, Constants.Drive.INTEGRAL_ZONE, timeoutMS);
 
         master.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, slotIdx, timeoutMS);
         follower.follow(master);
@@ -37,7 +37,12 @@ public class CANDriveMotorPair implements Motor {
 
     @Override
     public void setSpeed(double speed) {
-        master.set(ControlMode.Velocity, speed);
+        master.set(ControlMode.Velocity, speed * Constants.Drive.OUTPUT_MULTIPLIER);
+    }
+
+    @Override
+    public double getSpeed() {
+        return master.getSelectedSensorVelocity() * Constants.Drive.INPUT_MULTIPLIER;
     }
 
     @Override

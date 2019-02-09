@@ -11,6 +11,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
@@ -74,6 +75,11 @@ public class Robot extends TimedRobot {
     this.hatchSystem.reset();
   }
 
+  public void updateDashboard() {
+    SmartDashboard.putNumber("rightMotorSpeed", this.driveTrain.getRightMotorSpeed());
+    SmartDashboard.putNumber("leftMotorSpeed", this.driveTrain.getLeftMotorSpeed());
+  }
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -83,6 +89,7 @@ public class Robot extends TimedRobot {
     // TODO: put in correct channel ids
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)));
+    // TODO: one of these isn't a TalonSRX
     this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
     this.hatchSystem.init(new DoubleSolenoid(0, 0));
