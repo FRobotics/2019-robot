@@ -1,16 +1,16 @@
 package frc.robot;
 
 public class Util {
-    public static double[] smoothDrive(boolean slowMode, double leftAxis, double rightAxis) {
-        double fb = smooth(leftAxis, 0.2, 2); // inverted so up is forward (positive = forward)
-        double lr = smooth(rightAxis, 0.2, 3); // inverted so left turns left & right turns right
+    public static double[] smoothDrive(boolean slowMode, double yAxis, double xAxis) {
+        double fb = smooth(yAxis, 0.1, 2); // inverted so up is forward (positive = forward)
+        double lr = smooth(xAxis, 0.1, 3); // inverted so left turns left & right turns right
 
         // start out with just forward and backward
         double left, right;
         left = right = fb;
 
         // apply turning v2
-        if (Math.abs(lr) > 0.2) {
+        if (Math.abs(lr) > 0.1) {
             if (fb > 0.0) {
                 if (lr > 0.0) {
                     left = fb - lr;

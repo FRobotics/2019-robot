@@ -10,6 +10,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
@@ -70,9 +71,9 @@ public class Robot extends TimedRobot {
    */
   public void reset() {
     this.driveTrain.reset();
-    this.ballSystem.reset();
-    this.elevator.reset();
-    this.hatchSystem.reset();
+    /*
+     * this.ballSystem.reset(); this.elevator.reset(); this.hatchSystem.reset();
+     */
   }
 
   public void updateDashboard() {
@@ -89,10 +90,16 @@ public class Robot extends TimedRobot {
     // TODO: put in correct channel ids
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)));
+    this.driveTrain.setRateLimit(0.1);
     // TODO: one of these isn't a TalonSRX
-    this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
-    this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
-    this.hatchSystem.init(new DoubleSolenoid(0, 0));
+    /*
+     * this.ballSystem.init(new CANMotor(new TalonSRX(1)), new DoubleSolenoid(0, 1),
+     * new DoubleSolenoid(2, 3)); this.elevator.init(new CANMotor(new TalonSRX(2)),
+     * new DoubleSolenoid(4, 5), new DoubleSolenoid(6, 7));
+     * this.hatchSystem.init(new DoubleSolenoid(0, 1));
+     */
+    this.movementController.init(new Joystick(0));
+    this.actionsController.init(new Joystick(1));
   }
 
   @Override
@@ -119,7 +126,7 @@ public class Robot extends TimedRobot {
       }
       break;
     case START:
-      this.elevator.lowerArms();
+      // this.elevator.lowerArms();
       if (stateTimer.isFinished()) {
         this.teleopState = TeleopState.DEFAULT;
         this.stateTimer.start();
@@ -128,48 +135,34 @@ public class Robot extends TimedRobot {
     case DEFAULT:
       // drive
       double[] motorOutputs = Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER),
-          movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
-      driveTrain.setLeftMotorSpeed(motorOutputs[0]);
-      driveTrain.setRightMotorSpeed(motorOutputs[1]);
+          -movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
+      double leftMotorOutput = motorOutputs[0] * 10;
+      double rightMotorOutput = motorOutputs[1] * 10;
+      SmartDashboard.putNumber("leftMotorOuput", leftMotorOutput);
+      SmartDashboard.putNumber("rightMotorOuput", rightMotorOutput);
+      driveTrain.setLeftMotorSpeed(leftMotorOutput);
+      driveTrain.setRightMotorSpeed(rightMotorOutput);
       // elevator
-      double leftYAxis = actionsController.getAxis(Axis.LEFT_Y);
-      if (leftYAxis > 0.2) {
-        elevator.moveUp(leftYAxis);
-      } else if (leftYAxis < -0.2) {
-        elevator.moveDown(-leftYAxis); // this function seems kinda pointless
-      } else {
-        elevator.stop();
-      }
-      // ball
-      double rightYAxis = actionsController.getAxis(Axis.RIGHT_Y);
-      if (rightYAxis > 0.2) {
-        ballSystem.armsDown();
-        ballSystem.releaseBall();
-      } else if (rightYAxis < -0.2) {
-        ballSystem.armsDown();
-        ballSystem.pickupBall();
-      } else {
-        ballSystem.raiseArms();
-        ballSystem.stopBallMotor();
-      }
-      if (actionsController.buttonDown(Button.A)) {
-        ballSystem.punchBall();
-      } else {
-        ballSystem.retractPuncher();
-      }
-      // hatch
-      if (actionsController.buttonDown(Button.LEFT_BUMPER)) {
-        hatchSystem.pushOutward();
-      } else if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
-        hatchSystem.comeTogether();
-      }
-      // reset
-      if (movementController.buttonDown(Button.BACK)) {
-        this.teleopState = TeleopState.RESET;
-        this.stateTimer.start();
-      }
-      break;
+      /*
+       * double leftYAxis = actionsController.getAxis(Axis.LEFT_Y); if (leftYAxis >
+       * 0.2) { elevator.moveUp(leftYAxis); } else if (leftYAxis < -0.2) {
+       * elevator.moveDown(-leftYAxis); // this function seems kinda pointless } else
+       * { elevator.stop(); } // ball double rightYAxis =
+       * actionsController.getAxis(Axis.RIGHT_Y); if (rightYAxis > 0.2) {
+       * ballSystem.armsDown(); ballSystem.releaseBall(); } else if (rightYAxis <
+       * -0.2) { ballSystem.armsDown(); ballSystem.pickupBall(); } else {
+       * ballSystem.raiseArms(); ballSystem.stopBallMotor(); } if
+       * (actionsController.buttonDown(Button.A)) { ballSystem.punchBall(); } else {
+       * ballSystem.retractPuncher(); } // hatch if
+       * (actionsController.buttonDown(Button.LEFT_BUMPER)) {
+       * hatchSystem.pushOutward(); } else if
+       * (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+       * hatchSystem.comeTogether(); } // reset if
+       * (movementController.buttonDown(Button.BACK)) { this.teleopState =
+       * TeleopState.RESET; this.stateTimer.start(); } break;
+       */
     }
+    updateDashboard();
   }
 
   @Override

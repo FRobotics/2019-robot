@@ -16,21 +16,26 @@ public class RateLimiter {
 
     /**
      * Get a value based on a target and the last value using the rate
+     * 
      * @param targetValue - the target value to try to reach
      * @return the value limited by the rate
      */
     public double get(double targetValue) {
-        if(rate == -1) {
-            return targetValue;
+        double returnValue;
+        if (rate == -1) {
+            returnValue = targetValue;
+        } else {
+            double diff = targetValue - lastValue;
+            if (diff > rate) {
+                returnValue = lastValue + rate;
+            } else if (diff < -rate) {
+                returnValue = lastValue - rate;
+            } else {
+                returnValue = targetValue;
+            }
         }
-        double diff = targetValue - lastValue;
-        if(diff > rate) {
-            return lastValue + rate;
-        }
-        if(diff < - rate) {
-            return lastValue - rate;
-        }
-        return targetValue;
+        this.lastValue = returnValue;
+        return returnValue;
     }
 
     /**
@@ -42,6 +47,7 @@ public class RateLimiter {
 
     /**
      * Sets the last value to startValue
+     * 
      * @param startValue - the value to reset to
      */
     public void reset(double startValue) {

@@ -24,4 +24,10 @@ public class CANMotor implements Motor {
         return this;
     }
 
+    @Override
+    public Motor invert() {
+        motor.setInverted(!motor.getInverted());
+        return this;
+    }
+
 }

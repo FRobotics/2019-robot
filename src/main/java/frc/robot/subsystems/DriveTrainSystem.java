@@ -16,14 +16,13 @@ public class DriveTrainSystem {
     }
 
     public DriveTrainSystem(double rateLimit) {
-        this.rightRateLimiter = new RateLimiter(rateLimit);
-        this.leftRateLimiter = new RateLimiter(rateLimit);
+        this.setRateLimit(rateLimit);
     }
 
     public void init(EncoderMotor leftMotor, EncoderMotor rightMotor) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
-        this.rightMotor.setInverted(true);
+        this.rightMotor.invert();
     }
 
     /**
@@ -85,6 +84,7 @@ public class DriveTrainSystem {
     }
 
     public void setRateLimit(double rateLimit) {
+        this.leftRateLimiter = new RateLimiter(rateLimit);
         this.rightRateLimiter = new RateLimiter(rateLimit);
     }
 

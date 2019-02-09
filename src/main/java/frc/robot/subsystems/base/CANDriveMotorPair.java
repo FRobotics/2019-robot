@@ -37,6 +37,7 @@ public class CANDriveMotorPair implements EncoderMotor {
 
     @Override
     public void setSpeed(double speed) {
+        System.out.println(speed);
         master.set(ControlMode.Velocity, speed * Constants.Drive.OUTPUT_MULTIPLIER);
     }
 
@@ -46,9 +47,16 @@ public class CANDriveMotorPair implements EncoderMotor {
     }
 
     @Override
-    public Motor setInverted(boolean inverted) {
+    public EncoderMotor setInverted(boolean inverted) {
         master.setInverted(inverted);
         follower.setInverted(inverted);
+        return this;
+    }
+
+    @Override
+    public EncoderMotor invert() {
+        master.setInverted(!master.getInverted());
+        follower.setInverted(follower.getInverted());
         return this;
     }
 
