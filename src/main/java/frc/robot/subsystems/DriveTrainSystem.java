@@ -3,7 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.SpeedController;
 import frc.util.RateLimiter;
 
-public class DriveTrain {
+public class DriveTrainSystem {
 
     private SpeedController leftMotor;
     private SpeedController rightMotor;
@@ -15,19 +15,19 @@ public class DriveTrain {
     private RateLimiter rightRateLimiter;
     private RateLimiter leftRateLimiter;
 
-    public DriveTrain() {
+    public DriveTrainSystem() {
         this(false, -1);
     }
 
-    public DriveTrain(boolean inverted) {
+    public DriveTrainSystem(boolean inverted) {
         this(inverted, -1);
     }
 
-    public DriveTrain(double rateLimit) {
+    public DriveTrainSystem(double rateLimit) {
         this(false, rateLimit);
     }
 
-    public DriveTrain(boolean inverted, double rateLimit) {
+    public DriveTrainSystem(boolean inverted, double rateLimit) {
         this.inverted = inverted;
         this.rightRateLimiter = new RateLimiter(rateLimit);
         this.leftRateLimiter = new RateLimiter(rateLimit);

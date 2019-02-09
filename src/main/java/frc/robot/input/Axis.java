@@ -10,7 +10,7 @@ public enum Axis {
         this.ID = ID;
     }
 
-    public int getID() {
+    public int getId() {
         return ID;
     }
 

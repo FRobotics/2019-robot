@@ -10,8 +10,8 @@ public class Controller {
     private Joystick joystick;
     private HashMap<Integer, Boolean> buttonsPressed;
 
-    public Controller(int port) {
-        this.joystick = new Joystick(port);
+    public void init(Joystick joystick) {
+        this.joystick = joystick;
         this.buttonsPressed = new HashMap<>();
         for (Button button : Button.values()) {
             int id = button.getId();
