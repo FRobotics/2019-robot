@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
   // teleop
 
   private enum TeleopState {
-    START, RESET, DEFAULT, DELIVER_BALL
+    START, RESET, DEFAULT
   }
 
   private TeleopState teleopState;
