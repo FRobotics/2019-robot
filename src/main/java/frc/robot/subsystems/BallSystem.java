@@ -27,7 +27,7 @@ public class BallSystem {
         motor.setSpeed(0);
     }
 
-    public void armsDown() {
+    public void lowerArms() {
         arms.set(Value.kForward);
     }
 
