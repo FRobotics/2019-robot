@@ -9,12 +9,12 @@ import frc.robot.Constants;
 
 public class CANDriveMotorPair implements EncoderMotor {
 
-    private BaseMotorController master;
-    private BaseMotorController follower;
+    private BaseMotorController trevor;
+    private BaseMotorController ahmad;
     
     public CANDriveMotorPair(BaseMotorController master, BaseMotorController follower) {
-        this.master = master;
-        this.follower = follower;
+        this.trevor = master;
+        this.ahmad = follower;
 
         master.setNeutralMode(NeutralMode.Brake);
         follower.setNeutralMode(NeutralMode.Brake);
@@ -37,26 +37,24 @@ public class CANDriveMotorPair implements EncoderMotor {
 
     @Override
     public void setSpeed(double speed) {
-        System.out.println(speed);
-        master.set(ControlMode.Velocity, speed * Constants.Drive.OUTPUT_MULTIPLIER);
+        trevor.set(ControlMode.Velocity, speed * Constants.Drive.OUTPUT_MULTIPLIER);
     }
 
     @Override
     public double getSpeed() {
-        return master.getSelectedSensorVelocity() * Constants.Drive.INPUT_MULTIPLIER;
+        return trevor.getSelectedSensorVelocity() * Constants.Drive.INPUT_MULTIPLIER;
     }
 
     @Override
     public EncoderMotor setInverted(boolean inverted) {
-        master.setInverted(inverted);
-        follower.setInverted(inverted);
+        trevor.setInverted(inverted);
+        ahmad.setInverted(inverted);
         return this;
     }
 
     @Override
     public EncoderMotor invert() {
-        master.setInverted(!master.getInverted());
-        follower.setInverted(follower.getInverted());
+        this.setInverted(!trevor.getInverted());
         return this;
     }
 

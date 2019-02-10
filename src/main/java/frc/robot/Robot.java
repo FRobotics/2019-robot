@@ -7,8 +7,10 @@
 
 package frc.robot;
 
+import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -16,13 +18,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
+import frc.robot.state.State;
+import frc.robot.state.TeleopState;
 import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
 import frc.robot.subsystems.base.CANMotor;
 import frc.robot.subsystems.base.CANDriveMotorPair;
-import frc.util.CountdownTimer;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -45,14 +48,8 @@ public class Robot extends TimedRobot {
   private Controller movementController;
   private Controller actionsController;
 
-  // teleop
-
-  private enum TeleopState {
-    START, RESET, DEFAULT
-  }
-
-  private TeleopState teleopState;
-  private CountdownTimer stateTimer;
+  // states
+  private State<TeleopState> teleopState;
 
   public Robot() {
     this.driveTrain = new DriveTrainSystem();
@@ -63,7 +60,7 @@ public class Robot extends TimedRobot {
     this.movementController = new Controller();
     this.actionsController = new Controller();
 
-    this.teleopState = TeleopState.RESET;
+    this.teleopState = new State<TeleopState>(TeleopState.START);
   }
 
   /**
@@ -71,14 +68,17 @@ public class Robot extends TimedRobot {
    */
   public void reset() {
     this.driveTrain.reset();
-    /*
-     * this.ballSystem.reset(); this.elevator.reset(); this.hatchSystem.reset();
-     */
+    if (!Constants.PRACTICE_ROBOT) {
+      this.ballSystem.reset();
+      this.elevator.reset();
+      this.hatchSystem.reset();
+    }
   }
 
   public void updateDashboard() {
     SmartDashboard.putNumber("rightMotorSpeed", this.driveTrain.getRightMotorSpeed());
     SmartDashboard.putNumber("leftMotorSpeed", this.driveTrain.getLeftMotorSpeed());
+    SmartDashboard.putNumber("angle", this.driveTrain.getAngle());
   }
 
   /**
@@ -89,15 +89,15 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // TODO: put in correct channel ids
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
-        new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)));
-    this.driveTrain.setRateLimit(0.1);
+        new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
+    this.driveTrain.setRateLimit(1);
     // TODO: one of these isn't a TalonSRX
-    /*
-     * this.ballSystem.init(new CANMotor(new TalonSRX(1)), new DoubleSolenoid(0, 1),
-     * new DoubleSolenoid(2, 3)); this.elevator.init(new CANMotor(new TalonSRX(2)),
-     * new DoubleSolenoid(4, 5), new DoubleSolenoid(6, 7));
-     * this.hatchSystem.init(new DoubleSolenoid(0, 1));
-     */
+    if (!Constants.PRACTICE_ROBOT) {
+      this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0),
+          new DigitalInput(0));
+      this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
+      this.hatchSystem.init(new DoubleSolenoid(0, 0));
+    }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
   }
@@ -112,24 +112,26 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    this.stateTimer = new CountdownTimer(1000);
+    this.teleopState.start();
   }
 
   @Override
   public void teleopPeriodic() {
-    switch (this.teleopState) {
+    switch (this.teleopState.getState()) {
     default:
     case RESET:
       this.reset();
-      if (stateTimer.isFinished() && movementController.buttonDown(Button.START)) {
-        this.teleopState = TeleopState.START;
+      if (movementController.buttonDown(Button.START)) {
+        this.teleopState.setState(TeleopState.START);
       }
       break;
     case START:
-      // this.elevator.lowerArms();
-      if (stateTimer.isFinished()) {
-        this.teleopState = TeleopState.DEFAULT;
-        this.stateTimer.start();
+      if (!Constants.PRACTICE_ROBOT) {
+        this.elevator.lowerArms();
+        this.ballSystem.lowerArms();
+      }
+      if (this.teleopState.isFinished()) {
+        this.teleopState.setState(TeleopState.DEFAULT);
       }
       break;
     case DEFAULT:
@@ -142,25 +144,41 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("rightMotorOuput", rightMotorOutput);
       driveTrain.setLeftMotorSpeed(leftMotorOutput);
       driveTrain.setRightMotorSpeed(rightMotorOutput);
-      // elevator
-      /*
-       * double leftYAxis = actionsController.getAxis(Axis.LEFT_Y); if (leftYAxis >
-       * 0.2) { elevator.moveUp(leftYAxis); } else if (leftYAxis < -0.2) {
-       * elevator.moveDown(-leftYAxis); // this function seems kinda pointless } else
-       * { elevator.stop(); } // ball double rightYAxis =
-       * actionsController.getAxis(Axis.RIGHT_Y); if (rightYAxis > 0.2) {
-       * ballSystem.armsDown(); ballSystem.releaseBall(); } else if (rightYAxis <
-       * -0.2) { ballSystem.armsDown(); ballSystem.pickupBall(); } else {
-       * ballSystem.raiseArms(); ballSystem.stopBallMotor(); } if
-       * (actionsController.buttonDown(Button.A)) { ballSystem.punchBall(); } else {
-       * ballSystem.retractPuncher(); } // hatch if
-       * (actionsController.buttonDown(Button.LEFT_BUMPER)) {
-       * hatchSystem.pushOutward(); } else if
-       * (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
-       * hatchSystem.comeTogether(); } // reset if
-       * (movementController.buttonDown(Button.BACK)) { this.teleopState =
-       * TeleopState.RESET; this.stateTimer.start(); } break;
-       */
+      if (!Constants.PRACTICE_ROBOT) {
+        // elevator
+        double leftYAxis = actionsController.getAxis(Axis.LEFT_Y);
+        if (leftYAxis > 0.2) {
+          elevator.moveUp(leftYAxis);
+        } else if (leftYAxis < -0.2) {
+          elevator.moveDown(-leftYAxis); // this function seems kinda pointless
+        } else {
+          elevator.stop();
+        }
+        // ball
+        double rightYAxis = actionsController.getAxis(Axis.RIGHT_Y);
+        if (rightYAxis < -0.2) {
+          ballSystem.pickupBall();
+        } else {
+          ballSystem.stopBallMotor();
+        }
+        if (actionsController.buttonDown(Button.A)) {
+          // TODO: states to raise arms
+          ballSystem.punchBall();
+        } else {
+          ballSystem.retractPuncher();
+        }
+        // hatch
+        if (actionsController.buttonDown(Button.LEFT_BUMPER)) {
+          hatchSystem.pushOutward();
+        } else if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          hatchSystem.comeTogether();
+        }
+      }
+      // reset
+      if (movementController.buttonDown(Button.BACK)) {
+        this.teleopState.setState(TeleopState.RESET);
+      }
+      break;
     }
     updateDashboard();
   }
@@ -171,6 +189,11 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testPeriodic() {
+  }
+
+  @Override
+  public void disabledInit() {
+    this.driveTrain.reset();
   }
 
 }

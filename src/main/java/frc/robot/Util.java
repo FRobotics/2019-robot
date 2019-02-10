@@ -3,7 +3,7 @@ package frc.robot;
 public class Util {
     public static double[] smoothDrive(boolean slowMode, double yAxis, double xAxis) {
         double fb = smooth(yAxis, 0.1, 2); // inverted so up is forward (positive = forward)
-        double lr = smooth(xAxis, 0.1, 3); // inverted so left turns left & right turns right
+        double lr = smooth(-xAxis, 0.1, 3); // inverted so left turns left & right turns right
 
         // start out with just forward and backward
         double left, right;

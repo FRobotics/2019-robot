@@ -1,6 +1,9 @@
 package frc.robot;
 
 public class Constants {
+
+    public static final boolean PRACTICE_ROBOT = true;
+
     public class Drive {
         /**
          * in inches

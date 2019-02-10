@@ -2,7 +2,6 @@ package frc.util;
 
 public class RateLimiter {
 
-    private double lastValue;
     private double rate;
 
     public RateLimiter(double rate) {
@@ -10,7 +9,6 @@ public class RateLimiter {
     }
 
     public RateLimiter(double rate, double startValue) {
-        this.lastValue = startValue;
         this.rate = rate;
     }
 
@@ -20,38 +18,19 @@ public class RateLimiter {
      * @param targetValue - the target value to try to reach
      * @return the value limited by the rate
      */
-    public double get(double targetValue) {
-        double returnValue;
+    public double get(double targetValue, double currentValue) {
         if (rate == -1) {
-            returnValue = targetValue;
+            return targetValue;
         } else {
-            double diff = targetValue - lastValue;
+            double diff = targetValue - currentValue;
             if (diff > rate) {
-                returnValue = lastValue + rate;
+                return currentValue + rate;
             } else if (diff < -rate) {
-                returnValue = lastValue - rate;
+                return currentValue - rate;
             } else {
-                returnValue = targetValue;
+                return targetValue;
             }
         }
-        this.lastValue = returnValue;
-        return returnValue;
-    }
-
-    /**
-     * Sets the last value back to 0
-     */
-    public void reset() {
-        this.reset(0);
-    }
-
-    /**
-     * Sets the last value to startValue
-     * 
-     * @param startValue - the value to reset to
-     */
-    public void reset(double startValue) {
-        this.lastValue = startValue;
     }
 
     public double getRate() {

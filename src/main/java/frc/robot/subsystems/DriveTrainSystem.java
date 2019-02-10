@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 import frc.robot.subsystems.base.EncoderMotor;
 import frc.util.RateLimiter;
 
@@ -7,6 +8,8 @@ public class DriveTrainSystem {
 
     private EncoderMotor leftMotor;
     private EncoderMotor rightMotor;
+
+    private Gyro gyro;
 
     private RateLimiter rightRateLimiter;
     private RateLimiter leftRateLimiter;
@@ -19,9 +22,10 @@ public class DriveTrainSystem {
         this.setRateLimit(rateLimit);
     }
 
-    public void init(EncoderMotor leftMotor, EncoderMotor rightMotor) {
+    public void init(EncoderMotor leftMotor, EncoderMotor rightMotor, Gyro gyro) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
+        this.gyro = gyro;
         this.rightMotor.invert();
     }
 
@@ -30,7 +34,7 @@ public class DriveTrainSystem {
      * @param speed - the speed to set the left motor to; should be -1 to +1
      */
     public void setLeftMotorSpeed(double speed) {
-        speed = leftRateLimiter.get(speed);
+        speed = leftRateLimiter.get(speed, leftMotor.getSpeed());
         this.leftMotor.setSpeed(speed);
     }
 
@@ -39,7 +43,7 @@ public class DriveTrainSystem {
      * @param speed - the speed to set the left motor to; should be -1 to +1
      */
     public void setRightMotorSpeed(double speed) {
-        speed = rightRateLimiter.get(speed);
+        speed = rightRateLimiter.get(speed, rightMotor.getSpeed());
         this.rightMotor.setSpeed(speed);
     }
 
@@ -75,8 +79,7 @@ public class DriveTrainSystem {
      * Resets both of the rate limiters
      */
     public void reset() {
-        this.leftRateLimiter.reset();
-        this.rightRateLimiter.reset();
+        this.stop();
     }
 
     public double getRateLimit() {
@@ -94,5 +97,9 @@ public class DriveTrainSystem {
 
     public double getRightMotorSpeed() {
         return this.rightMotor.getSpeed();
+    }
+
+    public double getAngle() {
+        return gyro.getAngle();
     }
 }
