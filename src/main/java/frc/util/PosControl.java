@@ -18,6 +18,16 @@ public class PosControl {
     private double lastSpeed;
     private int onTargetCount;
 
+    public static void main(String[]args) {
+        PosControl test = new PosControl(100, 2, 5, x -> 0.5*x, 5);
+        double pos = 0;
+        for(int i = 1; i < 50 && !test.onTarget(); i++) {
+            long time = i;
+            pos += test.getSpeed(pos, time);
+            System.out.println(time + ": " + pos);
+        }
+    }
+
     /**
      * 
      * @param target   - The distance you want to reach
