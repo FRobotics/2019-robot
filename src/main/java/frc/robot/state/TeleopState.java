@@ -6,7 +6,7 @@ public enum TeleopState implements StateBase {
     private long time;
 
     private TeleopState() {
-        this.time = -1;
+        this(-1);
     }
 
     private TeleopState(long time) {

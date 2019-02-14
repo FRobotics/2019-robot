@@ -1,12 +1,15 @@
 package frc.robot.state;
 
+import frc.util.PosControl;
+
 public enum DriveState implements StateBase {
-    CONTROLLED(), TURN_180();
+    CONTROLLED(), TURN();
 
     private long time;
+    private PosControl posControl;
 
     private DriveState() {
-        this.time = -1;
+        this(-1);
     }
 
     private DriveState(long time) {
@@ -16,6 +19,14 @@ public enum DriveState implements StateBase {
     @Override
     public long getTime() {
         return time;
+    }
+
+    public PosControl getPosControl() {
+        return this.posControl;
+    }
+
+    public void setPosControl(PosControl posControl) {
+        this.posControl = posControl;
     }
 
 }

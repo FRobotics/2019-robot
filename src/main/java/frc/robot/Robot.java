@@ -10,6 +10,7 @@ package frc.robot;
 import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import edu.wpi.cscore.CameraServerJNI;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -18,6 +19,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
+import frc.robot.state.BallHatchState;
+import frc.robot.state.DriveState;
 import frc.robot.state.State;
 import frc.robot.state.TeleopState;
 import frc.robot.subsystems.BallSystem;
@@ -25,6 +28,7 @@ import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
 import frc.robot.subsystems.base.CANMotor;
+import frc.util.PosControl;
 import frc.robot.subsystems.base.CANDriveMotorPair;
 
 /**
@@ -49,7 +53,11 @@ public class Robot extends TimedRobot {
   private Controller actionsController;
 
   // states
+  // in the future just store an array of #s or enums as a "path" to travel, makes
+  // things a lot easier
   private State<TeleopState> teleopState;
+  private State<DriveState> driveState;
+  private State<BallHatchState> ballHatchState;
 
   public Robot() {
     this.driveTrain = new DriveTrainSystem();
@@ -60,7 +68,9 @@ public class Robot extends TimedRobot {
     this.movementController = new Controller();
     this.actionsController = new Controller();
 
-    this.teleopState = new State<TeleopState>(TeleopState.START);
+    this.teleopState = new State<TeleopState>(new TeleopState[]{ TeleopState.START, TeleopState.DEFAULT });
+    this.driveState = new State<DriveState>(DriveState.CONTROLLED);
+    this.ballHatchState = new State<BallHatchState>(BallHatchState.NONE);
   }
 
   /**
@@ -122,7 +132,7 @@ public class Robot extends TimedRobot {
     case RESET:
       this.reset();
       if (movementController.buttonDown(Button.START)) {
-        this.teleopState.setState(TeleopState.START);
+        this.teleopState.setStates(new TeleopState[]{ TeleopState.START, TeleopState.DEFAULT });
       }
       break;
     case START:
@@ -130,23 +140,34 @@ public class Robot extends TimedRobot {
         this.elevator.lowerArms();
         this.ballSystem.lowerArms();
       }
-      if (this.teleopState.isFinished()) {
-        this.teleopState.setState(TeleopState.DEFAULT);
-      }
       break;
     case DEFAULT:
       // drive
-      double[] motorOutputs = Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER),
-          -movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
-      double leftMotorOutput = motorOutputs[0] * 10;
-      double rightMotorOutput = motorOutputs[1] * 10;
-      SmartDashboard.putNumber("leftMotorOuput", leftMotorOutput);
-      SmartDashboard.putNumber("rightMotorOuput", rightMotorOutput);
-      driveTrain.setLeftMotorSpeed(leftMotorOutput);
-      driveTrain.setRightMotorSpeed(rightMotorOutput);
+      switch (this.driveState.getState()) {
+      case CONTROLLED:
+        double[] motorOutputs = Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER),
+            -movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
+        double leftMotorOutput = motorOutputs[0] * 10;
+        double rightMotorOutput = motorOutputs[1] * 10;
+        SmartDashboard.putNumber("leftMotorOuput", leftMotorOutput);
+        SmartDashboard.putNumber("rightMotorOuput", rightMotorOutput);
+        driveTrain.setLeftMotorSpeed(leftMotorOutput);
+        driveTrain.setRightMotorSpeed(rightMotorOutput);
+        break;
+      case TURN:
+        PosControl posControl = this.driveState.getState().getPosControl();
+        if (posControl.onTarget()) {
+          this.driveState.setState(DriveState.CONTROLLED);
+        } else {
+          double speed = posControl.getSpeed(this.driveTrain.getAngle(), System.currentTimeMillis());
+          this.driveTrain.turn(speed);
+        }
+        break;
+      }
+      // if it's the real robot
       if (!Constants.PRACTICE_ROBOT) {
         // elevator
-        double leftYAxis = actionsController.getAxis(Axis.LEFT_Y);
+        double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
         if (leftYAxis > 0.2) {
           elevator.moveUp(leftYAxis);
         } else if (leftYAxis < -0.2) {
@@ -154,24 +175,40 @@ public class Robot extends TimedRobot {
         } else {
           elevator.stop();
         }
-        // ball
-        double rightYAxis = actionsController.getAxis(Axis.RIGHT_Y);
-        if (rightYAxis < -0.2) {
-          ballSystem.pickupBall();
-        } else {
+        // ball and hatch
+        if (!movementController.buttonDown(Button.X)) {
           ballSystem.stopBallMotor();
         }
-        if (actionsController.buttonDown(Button.A)) {
-          // TODO: states to raise arms
-          ballSystem.punchBall();
-        } else {
-          ballSystem.retractPuncher();
-        }
-        // hatch
-        if (actionsController.buttonDown(Button.LEFT_BUMPER)) {
-          hatchSystem.pushOutward();
-        } else if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
-          hatchSystem.comeTogether();
+        switch (ballHatchState.getState()) {
+        case NONE:
+          // pick up hatch
+          if (movementController.buttonDown(Button.A)) {
+            hatchSystem.pushOutward();
+          }
+          // release hatch
+          if (movementController.buttonDown(Button.B)) {
+            hatchSystem.comeTogether();
+          }
+          // pick up ball
+          if (movementController.buttonDown(Button.X)) {
+            ballSystem.pickupBall();
+          }
+
+          // release ball
+          if (movementController.buttonDown(Button.Y)) {
+            this.ballHatchState.setStates(new BallHatchState[] { BallHatchState.RAISE_ARMS, BallHatchState.PUNCH_BALL,
+                BallHatchState.LOWER_ARMS, BallHatchState.NONE });
+          }
+          break;
+        case RAISE_ARMS:
+          this.ballSystem.raiseArms();
+          break;
+        case LOWER_ARMS:
+          this.ballSystem.lowerArms();
+          break;
+        case PUNCH_BALL:
+          this.ballSystem.punchBall();
+          break;
         }
       }
       // reset
@@ -180,6 +217,9 @@ public class Robot extends TimedRobot {
       }
       break;
     }
+    this.teleopState.periodic();
+    this.driveState.periodic();
+    this.ballHatchState.periodic();
     updateDashboard();
   }
 
