@@ -43,6 +43,10 @@ public class BallSystem {
         puncher.set(Value.kReverse);
     }
 
+    public boolean sensedBall() {
+        return sensor.get();
+    }
+
     public void reset() {
         raiseArms();
         stopBallMotor();

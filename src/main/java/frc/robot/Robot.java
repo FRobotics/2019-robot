@@ -7,13 +7,10 @@
 
 package frc.robot;
 
-import java.util.function.Function;
-
 import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
-import edu.wpi.cscore.CameraServerJNI;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -32,9 +29,9 @@ import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
+import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.robot.subsystems.base.CANMotor;
 import frc.util.PosControl;
-import frc.robot.subsystems.base.CANDriveMotorPair;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -64,6 +61,8 @@ public class Robot extends TimedRobot {
   private State<DriveState> driveState;
   private State<BallHatchState> ballHatchState;
   private State<ElevatorState> elevatorState;
+
+  private long seenBallCount;
 
   public Robot() {
     this.driveTrain = new DriveTrainSystem();
@@ -109,12 +108,14 @@ public class Robot extends TimedRobot {
     this.driveTrain.setRateLimit(1);
     if (!Constants.PRACTICE_ROBOT) {
       this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
-          new DigitalInput(0));
-      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0), new Ultrasonic(0, 3));
+          new DigitalInput(2));
+      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0),
+          new Ultrasonic(0, 3));
       this.hatchSystem.init(new DoubleSolenoid(1, 5, 4));
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
+    this.seenBallCount = 0;
   }
 
   @Override
@@ -172,37 +173,38 @@ public class Robot extends TimedRobot {
       // if it's the real robot
       if (!Constants.PRACTICE_ROBOT) {
         // elevator
+        // I really gotta move these functions into their respective classes jeez
         double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
-        if(actionsController.buttonPressed(Button.A)) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.buttonPressed(Button.A)) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.buttonPressed(Button.B)) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.buttonPressed(Button.B)) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(19, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.buttonPressed(Button.X)) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.buttonPressed(Button.X)) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.buttonPressed(Button.Y)) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.buttonPressed(Button.Y)) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.getAxis(Axis.D_PAD_X) > 0.2) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.getAxis(Axis.D_PAD_X) > 0.2) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.getAxis(Axis.D_PAD_X) < -0.2) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.getAxis(Axis.D_PAD_X) < -0.2) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(75, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.getAxis(Axis.D_PAD_Y) > 0.2) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.getAxis(Axis.D_PAD_Y) > 0.2) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
         }
-        if(actionsController.getAxis(Axis.D_PAD_Y) < -0.2) {
-          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+        if (actionsController.getAxis(Axis.D_PAD_Y) < -0.2) {
+          elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(47, 0.1, 0.5, t -> t, 1));
         }
         if (leftYAxis > 0.2 || leftYAxis < -0.2) {
@@ -215,7 +217,7 @@ public class Robot extends TimedRobot {
             PosControl posControl = elevatorState.getState().getPosControl();
             double speed = posControl.getSpeed(elevator.getHeight());
             elevator.move(speed);
-            if(posControl.onTarget()) {
+            if (posControl.onTarget()) {
               elevatorState.setState(ElevatorState.CONTROLLED);
             }
             break;
@@ -239,6 +241,13 @@ public class Robot extends TimedRobot {
           // release hatch
           if (movementController.buttonDown(Button.B)) {
             hatchSystem.comeTogether();
+          }
+          if (ballSystem.sensedBall()) {
+            seenBallCount++;
+            if (seenBallCount < 1000 / 20)
+              ballSystem.pickupBall();
+          } else {
+            seenBallCount = 0;
           }
           // pick up ball
           if (movementController.buttonDown(Button.X)) {
