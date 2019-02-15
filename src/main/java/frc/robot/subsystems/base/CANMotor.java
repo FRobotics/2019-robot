@@ -19,6 +19,11 @@ public class CANMotor implements Motor {
     }
 
     @Override
+    public void setVoltage(double percent) {
+        motor.set(ControlMode.PercentOutput, percent);
+    }
+
+    @Override
     public Motor setInverted(boolean inverted) {
         motor.setInverted(inverted);
         return this;

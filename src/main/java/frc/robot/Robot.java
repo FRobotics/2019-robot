@@ -11,6 +11,7 @@ import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
+import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -110,7 +111,7 @@ public class Robot extends TimedRobot {
       this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
           new DigitalInput(2));
       this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0),
-          new Ultrasonic(0, 3));
+          new Counter(3));
       this.hatchSystem.init(new DoubleSolenoid(1, 5, 4));
     }
     this.movementController.init(new Joystick(0));
@@ -145,6 +146,7 @@ public class Robot extends TimedRobot {
       if (!Constants.PRACTICE_ROBOT) {
         this.elevator.lowerArms();
         this.ballSystem.lowerArms();
+        this.hatchSystem.pushOutward();
       }
       break;
     case DEFAULT:
@@ -174,7 +176,6 @@ public class Robot extends TimedRobot {
       if (!Constants.PRACTICE_ROBOT) {
         // elevator
         // I really gotta move these functions into their respective classes jeez
-        double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
         if (actionsController.buttonPressed(Button.A)) {
           elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
@@ -207,6 +208,7 @@ public class Robot extends TimedRobot {
           elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
           elevatorState.getState().setPosControl(new PosControl(47, 0.1, 0.5, t -> t, 1));
         }
+        double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
         if (leftYAxis > 0.2 || leftYAxis < -0.2) {
           elevator.move(leftYAxis);
           elevatorState.setState(ElevatorState.CONTROLLED);
@@ -215,16 +217,15 @@ public class Robot extends TimedRobot {
           switch (elevatorState.getState()) {
           case GOTO:
             PosControl posControl = elevatorState.getState().getPosControl();
-            double speed = posControl.getSpeed(elevator.getHeight());
+            double speed = posControl.getSpeed(elevator.getHeight()); // TODO: CRASH HERE
             elevator.move(speed);
             if (posControl.onTarget()) {
               elevatorState.setState(ElevatorState.CONTROLLED);
             }
             break;
           case STOP:
-            elevator.stop();
-            break;
           case CONTROLLED:
+            elevator.stop();
             break;
           }
         }
@@ -234,6 +235,7 @@ public class Robot extends TimedRobot {
         }
         switch (ballHatchState.getState()) {
         case NONE:
+          ballSystem.retractPuncher();
           // pick up hatch
           if (movementController.buttonDown(Button.A)) {
             hatchSystem.pushOutward();

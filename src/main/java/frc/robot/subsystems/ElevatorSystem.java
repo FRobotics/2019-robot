@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import frc.robot.subsystems.base.Motor;
 
@@ -10,14 +10,15 @@ public class ElevatorSystem {
     private Motor winch;
     private DoubleSolenoid brake;
     private DoubleSolenoid arms;
-    private Ultrasonic sensor;
+    private Counter sensor;
 
-    public void init(Motor winch, DoubleSolenoid brake, DoubleSolenoid arms, Ultrasonic sensor) {
+    public void init(Motor winch, DoubleSolenoid brake, DoubleSolenoid arms, Counter sensor) {
         this.winch = winch;
         this.brake = brake;
         this.arms = arms;
         this.sensor = sensor;
-        this.sensor.setAutomaticMode(true);
+        this.sensor.setSemiPeriodMode(true);
+        this.sensor.setDistancePerPulse(1000000/10/2.54);
     }
 
     public void move(double speed) {
@@ -52,7 +53,7 @@ public class ElevatorSystem {
     }
 
     public double getHeight() {
-        return sensor.getRangeInches();
+        return sensor.getDistance();
     }
 
 }

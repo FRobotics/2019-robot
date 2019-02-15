@@ -44,11 +44,12 @@ public class State<S extends StateBase> {
     }
 
     public void clearQueue() {
-        this.queue.clear();
+        if (this.queue != null)
+            this.queue.clear();
     }
 
     public void periodic() {
-        if(this.isFinished()) {
+        if (this.isFinished()) {
             this.setState(this.queue.remove(0));
         }
     }
