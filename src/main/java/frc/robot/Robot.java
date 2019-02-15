@@ -7,20 +7,25 @@
 
 package frc.robot;
 
+import java.util.function.Function;
+
 import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 import edu.wpi.cscore.CameraServerJNI;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
 import frc.robot.state.BallHatchState;
 import frc.robot.state.DriveState;
+import frc.robot.state.ElevatorState;
 import frc.robot.state.State;
 import frc.robot.state.TeleopState;
 import frc.robot.subsystems.BallSystem;
@@ -58,6 +63,7 @@ public class Robot extends TimedRobot {
   private State<TeleopState> teleopState;
   private State<DriveState> driveState;
   private State<BallHatchState> ballHatchState;
+  private State<ElevatorState> elevatorState;
 
   public Robot() {
     this.driveTrain = new DriveTrainSystem();
@@ -68,9 +74,10 @@ public class Robot extends TimedRobot {
     this.movementController = new Controller();
     this.actionsController = new Controller();
 
-    this.teleopState = new State<TeleopState>(new TeleopState[]{ TeleopState.START, TeleopState.DEFAULT });
+    this.teleopState = new State<TeleopState>(new TeleopState[] { TeleopState.START, TeleopState.DEFAULT });
     this.driveState = new State<DriveState>(DriveState.CONTROLLED);
     this.ballHatchState = new State<BallHatchState>(BallHatchState.NONE);
+    this.elevatorState = new State<ElevatorState>(ElevatorState.CONTROLLED);
   }
 
   /**
@@ -97,16 +104,14 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    // TODO: put in correct channel ids
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
     this.driveTrain.setRateLimit(1);
-    // TODO: one of these isn't a TalonSRX
     if (!Constants.PRACTICE_ROBOT) {
-      this.ballSystem.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0),
+      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
           new DigitalInput(0));
-      this.elevator.init(new CANMotor(new TalonSRX(0)), new DoubleSolenoid(0, 0), new DoubleSolenoid(0, 0));
-      this.hatchSystem.init(new DoubleSolenoid(0, 0));
+      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0), new Ultrasonic(0, 3));
+      this.hatchSystem.init(new DoubleSolenoid(1, 5, 4));
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
@@ -132,7 +137,7 @@ public class Robot extends TimedRobot {
     case RESET:
       this.reset();
       if (movementController.buttonDown(Button.START)) {
-        this.teleopState.setStates(new TeleopState[]{ TeleopState.START, TeleopState.DEFAULT });
+        this.teleopState.setStates(new TeleopState[] { TeleopState.START, TeleopState.DEFAULT });
       }
       break;
     case START:
@@ -159,7 +164,7 @@ public class Robot extends TimedRobot {
         if (posControl.onTarget()) {
           this.driveState.setState(DriveState.CONTROLLED);
         } else {
-          double speed = posControl.getSpeed(this.driveTrain.getAngle(), System.currentTimeMillis());
+          double speed = posControl.getSpeed(this.driveTrain.getAngle());
           this.driveTrain.turn(speed);
         }
         break;
@@ -168,12 +173,58 @@ public class Robot extends TimedRobot {
       if (!Constants.PRACTICE_ROBOT) {
         // elevator
         double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
-        if (leftYAxis > 0.2) {
-          elevator.moveUp(leftYAxis);
-        } else if (leftYAxis < -0.2) {
-          elevator.moveDown(-leftYAxis); // this function seems kinda pointless
+        if(actionsController.buttonPressed(Button.A)) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.buttonPressed(Button.B)) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(19, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.buttonPressed(Button.X)) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.buttonPressed(Button.Y)) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.getAxis(Axis.D_PAD_X) > 0.2) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.getAxis(Axis.D_PAD_X) < -0.2) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(75, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.getAxis(Axis.D_PAD_Y) > 0.2) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t, 1));
+        }
+        if(actionsController.getAxis(Axis.D_PAD_Y) < -0.2) {
+          elevatorState.setStates(new ElevatorState[]{ElevatorState.STOP, ElevatorState.GOTO});
+          elevatorState.getState().setPosControl(new PosControl(47, 0.1, 0.5, t -> t, 1));
+        }
+        if (leftYAxis > 0.2 || leftYAxis < -0.2) {
+          elevator.move(leftYAxis);
+          elevatorState.setState(ElevatorState.CONTROLLED);
+          elevatorState.clearQueue();
         } else {
-          elevator.stop();
+          switch (elevatorState.getState()) {
+          case GOTO:
+            PosControl posControl = elevatorState.getState().getPosControl();
+            double speed = posControl.getSpeed(elevator.getHeight());
+            elevator.move(speed);
+            if(posControl.onTarget()) {
+              elevatorState.setState(ElevatorState.CONTROLLED);
+            }
+            break;
+          case STOP:
+            elevator.stop();
+            break;
+          case CONTROLLED:
+            break;
+          }
         }
         // ball and hatch
         if (!movementController.buttonDown(Button.X)) {
@@ -220,6 +271,7 @@ public class Robot extends TimedRobot {
     this.teleopState.periodic();
     this.driveState.periodic();
     this.ballHatchState.periodic();
+    this.elevatorState.periodic();
     updateDashboard();
   }
 

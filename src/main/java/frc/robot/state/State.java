@@ -43,6 +43,10 @@ public class State<S extends StateBase> {
         this.startNewTimer();
     }
 
+    public void clearQueue() {
+        this.queue.clear();
+    }
+
     public void periodic() {
         if(this.isFinished()) {
             this.setState(this.queue.remove(0));

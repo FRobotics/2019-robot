@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import frc.robot.subsystems.base.Motor;
 
@@ -9,22 +10,27 @@ public class ElevatorSystem {
     private Motor winch;
     private DoubleSolenoid brake;
     private DoubleSolenoid arms;
-    // TODO: add sonar
+    private Ultrasonic sensor;
 
-    public void init(Motor winch, DoubleSolenoid brake, DoubleSolenoid arms) {
+    public void init(Motor winch, DoubleSolenoid brake, DoubleSolenoid arms, Ultrasonic sensor) {
         this.winch = winch;
         this.brake = brake;
         this.arms = arms;
+        this.sensor = sensor;
+        this.sensor.setAutomaticMode(true);
     }
 
-    public void moveUp(double speed) {
+    public void move(double speed) {
         brake.set(Value.kReverse);
         winch.setSpeed(speed);
     }
 
+    public void moveUp(double speed) {
+        this.move(speed);
+    }
+
     public void moveDown(double speed) {
-        brake.set(Value.kReverse);
-        winch.setSpeed(-speed);
+        this.move(-speed);
     }
 
     public void stop() {
@@ -43,6 +49,10 @@ public class ElevatorSystem {
     public void reset() {
         this.stop();
         this.raiseArms();
+    }
+
+    public double getHeight() {
+        return sensor.getRangeInches();
     }
 
 }

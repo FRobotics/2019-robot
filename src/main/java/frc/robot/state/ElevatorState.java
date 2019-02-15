@@ -3,7 +3,7 @@ package frc.robot.state;
 import frc.util.PosControl;
 
 public enum ElevatorState implements StateBase {
-    CONTROLLED(), GOTO();
+    CONTROLLED(), STOP(1000), GOTO();
 
     private long time;
     private PosControl posControl;
