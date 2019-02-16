@@ -1,15 +1,15 @@
 package frc.robot.state;
 
-public enum TeleopState implements StateBase {
+public enum SandstormState implements StateBase {
     DEFAULT(), START(1000);
 
     private long time;
 
-    private TeleopState() {
+    private SandstormState() {
         this(-1);
     }
 
-    private TeleopState(long time) {
+    private SandstormState(long time) {
         this.time = time;
     }
 

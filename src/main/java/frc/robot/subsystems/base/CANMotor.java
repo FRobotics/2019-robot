@@ -19,7 +19,7 @@ public class CANMotor implements Motor {
     }
 
     @Override
-    public void setVoltage(double percent) {
+    public void setPercentOutput(double percent) {
         motor.set(ControlMode.PercentOutput, percent);
     }
 

@@ -32,19 +32,23 @@ public class DriveTrainSystem {
     /**
      * Sets the left motor's speed
      * @param speed - the speed to set the left motor to; should be -1 to +1
+     * @return the rate limited speed the motor was actually set to
      */
-    public void setLeftMotorSpeed(double speed) {
+    public double setLeftMotorSpeed(double speed) {
         speed = leftRateLimiter.get(speed, leftMotor.getSpeed());
         this.leftMotor.setSpeed(speed);
+        return speed;
     }
 
     /**
      * Sets the right motor's speed
      * @param speed - the speed to set the left motor to; should be -1 to +1
+     * @return the rate limited speed the motor was actually set to
      */
-    public void setRightMotorSpeed(double speed) {
+    public double setRightMotorSpeed(double speed) {
         speed = rightRateLimiter.get(speed, rightMotor.getSpeed());
         this.rightMotor.setSpeed(speed);
+        return speed;
     }
 
     /**
@@ -97,6 +101,14 @@ public class DriveTrainSystem {
 
     public double getRightMotorSpeed() {
         return this.rightMotor.getSpeed();
+    }
+
+    public double getLeftMotorOutputPercent() {
+        return this.leftMotor.getOutputPercent();
+    }
+
+    public double getRightMotorOutputPercent() {
+        return this.rightMotor.getOutputPercent();
     }
 
     public double getAngle() {

@@ -7,6 +7,8 @@ import frc.robot.subsystems.base.Motor;
 
 public class ElevatorSystem {
 
+    private final static double heightMult = 1000000.0/10.0/2.54;
+
     private Motor winch;
     private DoubleSolenoid brake;
     private DoubleSolenoid arms;
@@ -18,12 +20,16 @@ public class ElevatorSystem {
         this.arms = arms;
         this.sensor = sensor;
         this.sensor.setSemiPeriodMode(true);
-        this.sensor.setDistancePerPulse(1000000/10/2.54);
+        //this.sensor.setDistancePerPulse(1000000/10/2.54);
     }
 
     public void move(double speed) {
-        brake.set(Value.kReverse);
-        winch.setSpeed(speed);
+        if(speed > 0.3) {
+            brake.set(Value.kReverse);
+        } else {
+            brake.set(Value.kForward);
+        }
+        winch.setPercentOutput(-speed);
     }
 
     public void moveUp(double speed) {
@@ -53,7 +59,7 @@ public class ElevatorSystem {
     }
 
     public double getHeight() {
-        return sensor.getDistance();
+        return sensor.getPeriod() * heightMult;
     }
 
 }

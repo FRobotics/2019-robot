@@ -41,13 +41,18 @@ public class CANDriveMotorPair implements EncoderMotor {
     }
 
     @Override
-    public void setVoltage(double percent) {
+    public void setPercentOutput(double percent) {
         trevor.set(ControlMode.Velocity, percent);
     }
 
     @Override
     public double getSpeed() {
         return trevor.getSelectedSensorVelocity() * Constants.Drive.INPUT_MULTIPLIER;
+    }
+
+    @Override
+    public double getOutputPercent() {
+        return trevor.getMotorOutputPercent();
     }
 
     @Override

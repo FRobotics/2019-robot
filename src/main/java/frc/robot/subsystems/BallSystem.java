@@ -20,11 +20,11 @@ public class BallSystem {
     }
 
     public void pickupBall() {
-        motor.setVoltage(-0.4);
+        motor.setPercentOutput(-0.6);
     }
 
     public void stopBallMotor() {
-        motor.setVoltage(0);
+        motor.setPercentOutput(0);
     }
 
     public void lowerArms() {
