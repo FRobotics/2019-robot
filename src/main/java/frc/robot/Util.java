@@ -1,7 +1,10 @@
 package frc.robot;
 
 public class Util {
-    public static double[] smoothDrive(boolean slowMode, double yAxis, double xAxis) {
+
+    public static final double[] smoothDriveResult = new double[2];
+
+    public static void smoothDrive(boolean slowMode, double yAxis, double xAxis) {
         double fb = smooth(yAxis, 0.2, 2); // inverted so up is forward (positive = forward)
         double lr = smooth(-xAxis, 0.2, 3); // inverted so left turns left & right turns right
 
@@ -38,7 +41,8 @@ public class Util {
             left *= 0.5;
         }
 
-        return new double[] { left, right };
+        smoothDriveResult[0] = left;
+        smoothDriveResult[1] = right;
     }
 
     public static double smooth(double value, double deadband, double power) {

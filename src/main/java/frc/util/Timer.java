@@ -2,6 +2,8 @@ package frc.util;
 
 public class Timer {
 
+    private static long currentTime;
+
     private long start;
 
     public void start() {
@@ -9,7 +11,15 @@ public class Timer {
     }
 
     public long timePassed() {
-        return System.currentTimeMillis() - start;
+        return currentTime - start;
     }
 
+    public static void updateTime() {
+        currentTime = System.currentTimeMillis();
+    }
+
+    public static long getCurrentTime() {
+        return currentTime;
+    }
+    
 }

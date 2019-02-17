@@ -62,7 +62,7 @@ public class PosControl {
      * @return the speed to output
      */
     public double getSpeed(double currentPos) {
-        return this.getSpeed(currentPos, System.currentTimeMillis());
+        return this.getSpeed(currentPos, Timer.getCurrentTime());
     }
 
     /**

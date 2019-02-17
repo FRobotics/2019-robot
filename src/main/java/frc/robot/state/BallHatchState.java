@@ -1,7 +1,7 @@
 package frc.robot.state;
 
 public enum BallHatchState implements StateBase {
-    NONE(), PUNCH_BALL(1000), RAISE_ARMS(425), LOWER_ARMS(1000);
+    NONE(), PUNCH_BALL(1000), RETRACT_PUNCHER(10), RAISE_ARMS(425), LOWER_ARMS(1000);
 
     private long time;
 

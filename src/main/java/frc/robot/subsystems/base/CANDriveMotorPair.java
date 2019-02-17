@@ -42,7 +42,7 @@ public class CANDriveMotorPair implements EncoderMotor {
 
     @Override
     public void setPercentOutput(double percent) {
-        trevor.set(ControlMode.Velocity, percent);
+        trevor.set(ControlMode.PercentOutput, percent);
     }
 
     @Override
