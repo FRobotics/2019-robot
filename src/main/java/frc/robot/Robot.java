@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) 2018 FIRST. All Rights Reserved.                             */
-/* Open Source Software - may be modified and shared by FRC teams. The code   */
+/* Copyright (c) 2018 FIRST. All Rights Reserved. */
+/* Open Source Software - may be modified and shared by FRC teams. The code */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */
+/* the project. */
 /*----------------------------------------------------------------------------*/
 
 package frc.robot;
@@ -10,7 +10,6 @@ package frc.robot;
 import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-
 import edu.wpi.first.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -32,10 +31,9 @@ import frc.util.PosControl;
 import frc.util.Timer4150;
 
 /**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the TimedRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the build.gradle file in the
+ * The VM is configured to automatically run this class, and to call the functions corresponding to
+ * each mode, as described in the TimedRobot documentation. If you change the name of this class or
+ * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
 public class Robot extends TimedRobot {
@@ -58,7 +56,6 @@ public class Robot extends TimedRobot {
 
   private long now;
 
-  private CountdownTimer modeStateTimer;
   private State.SandstormMode sandstormState;
   private State.TeleopMode teleopState;
   private State.TestMode testState;
@@ -66,6 +63,10 @@ public class Robot extends TimedRobot {
   private State.Drive driveState;
   private State.BallHatch ballHatchState;
   private State.Elevator elevatorState;
+
+  private CountdownTimer modeStateTimer;
+  private CountdownTimer ballHatchTimer;
+  private CountdownTimer elevatorTimer;
 
   private long seenBallCount;
 
@@ -82,8 +83,14 @@ public class Robot extends TimedRobot {
     this.actionsController = new Controller();
 
     this.driveState = State.Drive.CONTROLLED;
-    this.ballHatchState = State.BallHatch.NONE;
+    this.ballHatchState = State.BallHatch.CONTROLLED;
     this.elevatorState = State.Elevator.CONTROLLED;
+
+    this.seenBallCount = 0;
+    this.autoEnabledFirst = false;
+    this.modeStateTimer = new CountdownTimer();
+    this.ballHatchTimer = new CountdownTimer();
+    this.elevatorTimer = new CountdownTimer();
   }
 
   /**
@@ -108,13 +115,13 @@ public class Robot extends TimedRobot {
     }
   }
 
-  public static long timeDiff;
-
   private void initDashboard() {
-    this.ntVariableHandles = new int[] { getNTVHandle("leftMotorSpeed"), getNTVHandle("rightMotorSpeed"),
-        getNTVHandle("leftMotorOutputPercent"), getNTVHandle("rightMotorOutputPercent"), getNTVHandle("angle"),
-        getNTVHandle("ballDetected"), getNTVHandle("elevatorHeight"), getNTVHandle("leftMotorTarget"),
-        getNTVHandle("rightMotorTarget"), getNTVHandle("leftMotorOutput"), getNTVHandle("rightMotorOutput") };
+    this.ntVariableHandles =
+        new int[] {getNTVHandle("leftMotorSpeed"), getNTVHandle("rightMotorSpeed"),
+            getNTVHandle("leftMotorOutputPercent"), getNTVHandle("rightMotorOutputPercent"),
+            getNTVHandle("angle"), getNTVHandle("ballDetected"), getNTVHandle("elevatorHeight"),
+            getNTVHandle("leftMotorTarget"), getNTVHandle("rightMotorTarget"),
+            getNTVHandle("leftMotorOutput"), getNTVHandle("rightMotorOutput")};
   }
 
   private void updateDashboard() {
@@ -127,9 +134,8 @@ public class Robot extends TimedRobot {
     setNTDouble(6, this.elevator.getHeight());
     setNTDouble(7, leftMotorTarget);
     setNTDouble(8, rightMotorTarget);
-    setNTDouble(9, leftMotorTarget);
-    setNTDouble(10, leftMotorTarget);
-    SmartDashboard.putNumber("a", timeDiff);
+    setNTDouble(9, leftMotorOutput);
+    setNTDouble(10, rightMotorOutput);
   }
 
   private int getNTVHandle(String key) {
@@ -145,8 +151,8 @@ public class Robot extends TimedRobot {
   }
 
   /**
-   * This function is run when the robot is first started up and should be used
-   * for any initialization code.
+   * This function is run when the robot is first started up and should be used for any
+   * initialization code.
    */
   @Override
   public void robotInit() {
@@ -154,17 +160,14 @@ public class Robot extends TimedRobot {
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
     this.driveTrain.setRateLimit(1);
     if (!Constants.PRACTICE_ROBOT) {
-      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
-          new DigitalInput(2));
-      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0),
-          new Counter(3));
+      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2),
+          new DoubleSolenoid(1, 7, 6), new DigitalInput(2));
+      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4),
+          new DoubleSolenoid(1, 1, 0), new Counter(3));
       this.hatchSystem.init(new DoubleSolenoid(1, 5, 4));
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
-    this.seenBallCount = 0;
-    this.autoEnabledFirst = false;
-    this.modeStateTimer = new CountdownTimer();
     Thread ntv = new Thread(new NTVariableRunnable());
     ntv.setPriority(Thread.MIN_PRIORITY);
     ntv.start();
@@ -179,21 +182,21 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     switch (this.sandstormState) {
-    default:
-    case START:
-      this.modeStateTimer.set(1000);
-      this.sandstormState = State.SandstormMode.INIT;
-      break;
-    case INIT:
-      this.generalInit();
-      this.modeStateTimer.update(now);
-      if (this.modeStateTimer.isFinished()) {
-        this.sandstormState = State.SandstormMode.CONTROLLED;
-      }
-      break;
-    case CONTROLLED:
-      this.generalPeriodic();
-      break;
+      default:
+      case START:
+        this.modeStateTimer.start(1000);
+        this.sandstormState = State.SandstormMode.INIT;
+        break;
+      case INIT:
+        this.generalInit();
+        this.modeStateTimer.update(now);
+        if (this.modeStateTimer.isFinished()) {
+          this.sandstormState = State.SandstormMode.CONTROLLED;
+        }
+        break;
+      case CONTROLLED:
+        this.generalPeriodic();
+        break;
     }
   }
 
@@ -209,21 +212,21 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     switch (this.teleopState) {
-    default:
-    case START:
-      this.modeStateTimer.set(1000);
-      this.teleopState = State.TeleopMode.INIT;
-      break;
-    case INIT:
-      this.generalInit();
-      this.modeStateTimer.update(now);
-      if (this.modeStateTimer.isFinished()) {
-        this.teleopState = State.TeleopMode.CONTROLLED;
-      }
-      break;
-    case CONTROLLED:
-      this.generalPeriodic();
-      break;
+      default:
+      case START:
+        this.modeStateTimer.start(1000);
+        this.teleopState = State.TeleopMode.INIT;
+        break;
+      case INIT:
+        this.generalInit();
+        this.modeStateTimer.update(now);
+        if (this.modeStateTimer.isFinished()) {
+          this.teleopState = State.TeleopMode.CONTROLLED;
+        }
+        break;
+      case CONTROLLED:
+        this.generalPeriodic();
+        break;
     }
   }
 
@@ -235,29 +238,29 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
     switch (this.testState) {
-    default:
-    case START:
-      this.modeStateTimer.set(1000);
-      this.testState = State.TestMode.INIT;
-      break;
-    case INIT:
-      this.generalInit();
-      this.modeStateTimer.update(now);
-      if(this.modeStateTimer.isFinished()) {
-        this.testState = State.TestMode.CONTROLLED;
-      }
-    case CONTROLLED:
-      this.generalPeriodic();
-      if (movementController.buttonDown(Button.BACK)) {
-        this.testState = State.TestMode.RESET;
-      }
-      break;
-    case RESET:
-      this.reset();
-      if (movementController.buttonDown(Button.START)) {
-        this.testState = State.TestMode.START;
-      }
-      break;
+      default:
+      case START:
+        this.modeStateTimer.start(1000);
+        this.testState = State.TestMode.INIT;
+        break;
+      case INIT:
+        this.generalInit();
+        this.modeStateTimer.update(now);
+        if (this.modeStateTimer.isFinished()) {
+          this.testState = State.TestMode.CONTROLLED;
+        }
+      case CONTROLLED:
+        this.generalPeriodic();
+        if (movementController.buttonDown(Button.BACK)) {
+          this.testState = State.TestMode.RESET;
+        }
+        break;
+      case RESET:
+        this.reset();
+        if (movementController.buttonDown(Button.START)) {
+          this.testState = State.TestMode.START;
+        }
+        break;
     }
   }
 
@@ -275,79 +278,96 @@ public class Robot extends TimedRobot {
     }
   }
 
-  double leftMotorTarget;
-  double rightMotorTarget;
-  double leftMotorOutput;
-  double rightMotorOutput;
-  PosControl drivePosControl;
-  PosControl elevatorPosControl;
+  private double leftMotorTarget;
+  private double rightMotorTarget;
+  private double leftMotorOutput;
+  private double rightMotorOutput;
+  private PosControl drivePosControl;
+  private PosControl elevatorPosControl;
 
   public void generalPeriodic() {
     // drive
     switch (this.driveState) {
-    case CONTROLLED:
-      Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER), -movementController.getAxis(Axis.LEFT_Y),
-          movementController.getAxis(Axis.RIGHT_X));
-      leftMotorTarget = Util.smoothDriveResult[0] * 10;
-      rightMotorTarget = Util.smoothDriveResult[1] * 10;
-      leftMotorOutput = driveTrain.setLeftMotorSpeed(leftMotorTarget);
-      rightMotorOutput = driveTrain.setRightMotorSpeed(rightMotorTarget);
-      if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
-        double target = driveTrain.getAngle() + 180;
-        target = target > 360 ? target - 360 : target;
-        drivePosControl = new PosControl(target, 1, 3, t -> t * 0.001, 3);
-        driveState = State.Drive.TURN;
-      }
-      break;
-    case TURN:
-      if (drivePosControl.onTarget()) {
-        this.driveState = State.Drive.CONTROLLED;
-      } else {
-        double speed = drivePosControl.getSpeed(this.driveTrain.getAngle(), now);
-        this.driveTrain.turn(speed);
-      }
-      break;
+      case CONTROLLED:
+        Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER),
+            -movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
+        leftMotorTarget = Util.smoothDriveResult[0] * 10;
+        rightMotorTarget = Util.smoothDriveResult[1] * 10;
+        leftMotorOutput = driveTrain.setLeftMotorSpeed(leftMotorTarget);
+        rightMotorOutput = driveTrain.setRightMotorSpeed(rightMotorTarget);
+        if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
+          double target = driveTrain.getAngle() + 180;
+          target = target > 360 ? target - 360 : target;
+          drivePosControl = new PosControl(target, 1, 3, t -> t * 0.001, 3);
+          driveState = State.Drive.TURN;
+        }
+        break;
+      case TURN:
+        if (drivePosControl.onTarget()) {
+          this.driveState = State.Drive.CONTROLLED;
+        } else {
+          double speed = drivePosControl.getSpeed(this.driveTrain.getAngle(), now);
+          this.driveTrain.turn(speed);
+        }
+        break;
     }
     // if it's the real robot
     if (!Constants.PRACTICE_ROBOT) {
       // elevator
       if (actionsController.buttonPressed(Button.A)) {
         elevatorState = State.Elevator.STOP;
-        elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
+        elevatorTimer.start(1000);
+        if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          elevatorPosControl = new PosControl(43.5, 0.1, 0.5, t -> 0.01 * t, 1);
+        } else {
+          elevatorPosControl = new PosControl(53, 0.1, 0.5, t -> 0.01 * t, 1);
+        }
       }
       if (actionsController.buttonPressed(Button.B)) {
         elevatorState = State.Elevator.STOP;
-        elevatorPosControl = new PosControl(19, 0.1, 0.5, t -> t, 1);
+        elevatorTimer.start(1000);
+        if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          elevatorPosControl = new PosControl(61.5, 0.1, 0.5, t -> 0.01 * t, 1);
+        } else {
+          elevatorPosControl = new PosControl(73, 0.1, 0.5, t -> 0.01 * t, 1);
+        }
       }
       if (actionsController.buttonPressed(Button.X)) {
         elevatorState = State.Elevator.STOP;
-        elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
-      }
-      if (actionsController.buttonPressed(Button.Y)) {
-        elevatorState = State.Elevator.STOP;
-        elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
+        elevatorTimer.start(1000);
+        if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          elevatorPosControl = new PosControl(80, 0.1, 0.5, t -> 0.01 * t, 1);
+        } else {
+          elevatorPosControl = new PosControl(91, 0.1, 0.5, t -> 0.01 * t, 1);
+        }
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
-        elevator.move(-leftYAxis);
+        if (-leftYAxis > 0 || elevator.getHeight() > 39) {
+          elevator.move(-leftYAxis);
+        } else {
+          elevator.stop();
+        }
         elevatorState = State.Elevator.CONTROLLED;
       } else {
         switch (elevatorState) {
-        case GOTO:
-          double speed = elevatorPosControl.getSpeed(elevator.getHeight(), now);
-          if (speed < 0) {
-            speed /= 2;
-          }
-          elevator.move(-speed);
-          if (elevatorPosControl.onTarget()) {
-            elevatorState = State.Elevator.CONTROLLED;
-          }
-          break;
-        case STOP:
-          // TODO: code here
-        case CONTROLLED:
-          elevator.stop();
-          break;
+          case GOTO:
+            double speed = elevatorPosControl.getSpeed(elevator.getHeight(), now);
+            if (speed < 0) {
+              speed /= 2;
+            }
+            elevator.move(-speed);
+            if (elevatorPosControl.onTarget()) {
+              elevatorState = State.Elevator.CONTROLLED;
+            }
+            break;
+          case STOP:
+            if (elevatorTimer.isFinished()) {
+              this.elevatorState = State.Elevator.GOTO;
+            }
+          case CONTROLLED:
+            elevator.stop();
+            break;
         }
       }
       // ball and hatch
@@ -355,44 +375,66 @@ public class Robot extends TimedRobot {
         ballSystem.stopBallMotor();
       }
       switch (ballHatchState) {
-      case NONE:
-        // pick up hatch
-        if (movementController.buttonPressed(Button.A)) {
-          hatchSystem.pushOutward();
-        }
-        // release hatch
-        if (movementController.buttonPressed(Button.B)) {
-          hatchSystem.comeTogether();
-        }
-        if (ballSystem.sensedBall()) {
-          seenBallCount++;
-          if (seenBallCount < 3000 / 20)
+        case CONTROLLED:
+          // pick up hatch
+          if (movementController.buttonPressed(Button.A)) {
+            hatchSystem.pushOutward();
+          }
+          // release hatch
+          if (movementController.buttonPressed(Button.B)) {
+            hatchSystem.comeTogether();
+          }
+          if (ballSystem.sensedBall()) {
+            seenBallCount++;
+            if (seenBallCount < 3000 / 20) {
+              ballSystem.pickupBall();
+            }
+          } else {
+            seenBallCount = 0;
+          }
+          // pick up ball
+          if (movementController.buttonDown(Button.X)) {
             ballSystem.pickupBall();
-        } else {
-          seenBallCount = 0;
-        }
-        // pick up ball
-        if (movementController.buttonDown(Button.X)) {
-          ballSystem.pickupBall();
-        }
+          }
 
-        // release ball
-        if (movementController.buttonDown(Button.Y)) {
-          this.ballHatchState = State.BallHatch.RAISE_ARMS;
-        }
-        break;
-      case RAISE_ARMS:
-        this.ballSystem.raiseArms();
-        break;
-      case LOWER_ARMS:
-        this.ballSystem.lowerArms();
-        break;
-      case PUNCH_BALL:
-        this.ballSystem.punchBall();
-        break;
-      case RETRACT_PUNCHER:
-        this.ballSystem.retractPuncher();
-        break;
+          // release ball
+          if (movementController.buttonDown(Button.Y)) {
+            this.ballHatchState = State.BallHatch.RAISE_ARMS;
+            this.ballHatchTimer.update(now);
+            ballHatchTimer.start(425);
+          }
+          break;
+        case RAISE_ARMS:
+          this.ballSystem.raiseArms();
+          this.ballHatchTimer.update(now);
+          if (this.ballHatchTimer.isFinished()) {
+            this.ballHatchState = State.BallHatch.PUNCH_BALL;
+            ballHatchTimer.start(100);
+          }
+          break;
+        case PUNCH_BALL:
+          this.ballSystem.punchBall();
+          this.ballHatchTimer.update(now);
+          if (this.ballHatchTimer.isFinished()) {
+            this.ballHatchState = State.BallHatch.RETRACT_PUNCHER;
+            ballHatchTimer.start(500);
+          }
+          break;
+        case RETRACT_PUNCHER:
+          this.ballSystem.retractPuncher();
+          this.ballHatchTimer.update(now);
+          if (this.ballHatchTimer.isFinished()) {
+            this.ballHatchState = State.BallHatch.LOWER_ARMS;
+            ballHatchTimer.start(1000);
+          }
+          break;
+        case LOWER_ARMS:
+          this.ballSystem.lowerArms();
+          this.ballHatchTimer.update(now);
+          if (this.ballHatchTimer.isFinished()) {
+            this.ballHatchState = State.BallHatch.CONTROLLED;
+          }
+          break;
       }
     }
   }

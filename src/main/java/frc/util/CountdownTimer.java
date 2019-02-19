@@ -12,8 +12,9 @@ public class CountdownTimer extends Timer4150 {
         this.target = target;
     }
 
-    public void set(long target) {
+    public void start(long target) {
         this.target = target;
+        this.start();
     }
 
     public boolean isFinished() {

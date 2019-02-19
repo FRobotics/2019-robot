@@ -24,11 +24,7 @@ public class ElevatorSystem {
     }
 
     public void move(double speed) {
-        if(speed > 0.3) {
-            brake.set(Value.kReverse);
-        } else {
-            brake.set(Value.kForward);
-        }
+        brake.set(Value.kReverse);
         winch.setPercentOutput(-speed);
     }
 

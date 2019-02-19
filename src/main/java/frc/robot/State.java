@@ -19,10 +19,10 @@ public class State {
     }
 
     public enum BallHatch {
-        NONE, PUNCH_BALL, RETRACT_PUNCHER, RAISE_ARMS, LOWER_ARMS; // 1000 10 425 1000
+        CONTROLLED, PUNCH_BALL, RETRACT_PUNCHER, RAISE_ARMS, LOWER_ARMS; // 1000 10 425 1000
     }
 
     public enum Elevator {
-        CONTROLLED, STOP, GOTO; // -1 1000 -1
+        CONTROLLED, STOP, GOTO;
     }
 }
