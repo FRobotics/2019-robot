@@ -56,16 +56,6 @@ public class PosControl {
     }
 
     /**
-     * Get the calculated speed that should be output based on the time System::currentTimeMillis
-     * 
-     * @param currentPos  - the distance you've travelled from the start
-     * @return the speed to output
-     */
-    public double getSpeed(double currentPos) {
-        return this.getSpeed(currentPos, Timer.getCurrentTime());
-    }
-
-    /**
      * Get the calculated speed that should be output
      * 
      * @param currentPos  - the distance you've travelled from the start

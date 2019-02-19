@@ -11,33 +11,25 @@ import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
-import frc.robot.state.BallHatchState;
-import frc.robot.state.DriveState;
-import frc.robot.state.ElevatorState;
-import frc.robot.state.SandstormState;
-import frc.robot.state.State;
-import frc.robot.state.TeleopState;
-import frc.robot.state.TestState;
 import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
 import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.robot.subsystems.base.CANMotor;
+import frc.util.CountdownTimer;
 import frc.util.PosControl;
-import frc.util.Timer;
+import frc.util.Timer4150;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -63,15 +55,17 @@ public class Robot extends TimedRobot {
   private Controller actionsController;
 
   // states
-  // in the future just store an array of #s or enums as a "path" to travel, makes
-  // things a lot easier
-  private State<SandstormState> sandstormState;
-  private State<TeleopState> teleopState;
-  private State<TestState> testState;
 
-  private State<DriveState> driveState;
-  private State<BallHatchState> ballHatchState;
-  private State<ElevatorState> elevatorState;
+  private long now;
+
+  private CountdownTimer modeStateTimer;
+  private State.SandstormMode sandstormState;
+  private State.TeleopMode teleopState;
+  private State.TestMode testState;
+
+  private State.Drive driveState;
+  private State.BallHatch ballHatchState;
+  private State.Elevator elevatorState;
 
   private long seenBallCount;
 
@@ -87,9 +81,9 @@ public class Robot extends TimedRobot {
     this.movementController = new Controller();
     this.actionsController = new Controller();
 
-    this.driveState = new State<DriveState>(DriveState.CONTROLLED);
-    this.ballHatchState = new State<BallHatchState>(BallHatchState.NONE);
-    this.elevatorState = new State<ElevatorState>(ElevatorState.CONTROLLED);
+    this.driveState = State.Drive.CONTROLLED;
+    this.ballHatchState = State.BallHatch.NONE;
+    this.elevatorState = State.Elevator.CONTROLLED;
   }
 
   /**
@@ -108,7 +102,7 @@ public class Robot extends TimedRobot {
     @Override
     public void run() {
       initDashboard();
-      while(robotRunning) {
+      while (robotRunning) {
         updateDashboard();
       }
     }
@@ -117,19 +111,10 @@ public class Robot extends TimedRobot {
   public static long timeDiff;
 
   private void initDashboard() {
-    this.ntVariableHandles = new int[] {
-      getNTVHandle("leftMotorSpeed"),
-      getNTVHandle("rightMotorSpeed"),
-      getNTVHandle("leftMotorOutputPercent"),
-      getNTVHandle("rightMotorOutputPercent"),
-      getNTVHandle("angle"),
-      getNTVHandle("ballDetected"),
-      getNTVHandle("elevatorHeight"),
-      getNTVHandle("leftMotorTarget"),
-      getNTVHandle("rightMotorTarget"),
-      getNTVHandle("leftMotorOutput"),
-      getNTVHandle("rightMotorOutput")
-    };
+    this.ntVariableHandles = new int[] { getNTVHandle("leftMotorSpeed"), getNTVHandle("rightMotorSpeed"),
+        getNTVHandle("leftMotorOutputPercent"), getNTVHandle("rightMotorOutputPercent"), getNTVHandle("angle"),
+        getNTVHandle("ballDetected"), getNTVHandle("elevatorHeight"), getNTVHandle("leftMotorTarget"),
+        getNTVHandle("rightMotorTarget"), getNTVHandle("leftMotorOutput"), getNTVHandle("rightMotorOutput") };
   }
 
   private void updateDashboard() {
@@ -151,7 +136,7 @@ public class Robot extends TimedRobot {
     return SmartDashboard.getEntry(key).getHandle();
   }
 
-  private void setNTDouble(int handle, double value){
+  private void setNTDouble(int handle, double value) {
     NetworkTablesJNI.setDouble(this.ntVariableHandles[handle], 0, value, false);
   }
 
@@ -179,6 +164,7 @@ public class Robot extends TimedRobot {
     this.actionsController.init(new Joystick(1));
     this.seenBallCount = 0;
     this.autoEnabledFirst = false;
+    this.modeStateTimer = new CountdownTimer();
     Thread ntv = new Thread(new NTVariableRunnable());
     ntv.setPriority(Thread.MIN_PRIORITY);
     ntv.start();
@@ -187,86 +173,92 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     this.autoEnabledFirst = true;
-    this.sandstormState = new State<SandstormState>(
-        new SandstormState[] { SandstormState.START, SandstormState.DEFAULT });
-    this.sandstormState.start();
+    this.sandstormState = State.SandstormMode.START;
   }
 
   @Override
   public void autonomousPeriodic() {
-    switch (this.sandstormState.getState()) {
+    switch (this.sandstormState) {
     default:
     case START:
-      this.generalStart();
+      this.modeStateTimer.set(1000);
+      this.sandstormState = State.SandstormMode.INIT;
       break;
-    case DEFAULT:
+    case INIT:
+      this.generalInit();
+      this.modeStateTimer.update(now);
+      if (this.modeStateTimer.isFinished()) {
+        this.sandstormState = State.SandstormMode.CONTROLLED;
+      }
+      break;
+    case CONTROLLED:
       this.generalPeriodic();
       break;
     }
-    this.sandstormState.periodic();
-    this.driveState.periodic();
-    this.ballHatchState.periodic();
-    this.elevatorState.periodic();
   }
 
   @Override
   public void teleopInit() {
     if (this.autoEnabledFirst) {
-      this.teleopState = new State<TeleopState>(TeleopState.DEFAULT);
+      this.teleopState = State.TeleopMode.CONTROLLED;
     } else {
-      this.teleopState = new State<TeleopState>(new TeleopState[] { TeleopState.START, TeleopState.DEFAULT });
+      this.teleopState = State.TeleopMode.START;
     }
-    this.teleopState.start();
   }
 
   @Override
   public void teleopPeriodic() {
-    switch (this.teleopState.getState()) {
+    switch (this.teleopState) {
     default:
     case START:
-      this.generalStart();
+      this.modeStateTimer.set(1000);
+      this.teleopState = State.TeleopMode.INIT;
       break;
-    case DEFAULT:
+    case INIT:
+      this.generalInit();
+      this.modeStateTimer.update(now);
+      if (this.modeStateTimer.isFinished()) {
+        this.teleopState = State.TeleopMode.CONTROLLED;
+      }
+      break;
+    case CONTROLLED:
       this.generalPeriodic();
       break;
     }
-    this.teleopState.periodic();
-    this.driveState.periodic();
-    this.ballHatchState.periodic();
-    this.elevatorState.periodic();
   }
 
   @Override
   public void testInit() {
-    this.testState = new State<TestState>(new TestState[] { TestState.START, TestState.DEFAULT });
-    this.testState.start();
+    this.testState = State.TestMode.START;
   }
 
   @Override
   public void testPeriodic() {
-    switch (this.testState.getState()) {
+    switch (this.testState) {
     default:
+    case START:
+      this.modeStateTimer.set(1000);
+      this.testState = State.TestMode.INIT;
+      break;
+    case INIT:
+      this.generalInit();
+      this.modeStateTimer.update(now);
+      if(this.modeStateTimer.isFinished()) {
+        this.testState = State.TestMode.CONTROLLED;
+      }
+    case CONTROLLED:
+      this.generalPeriodic();
+      if (movementController.buttonDown(Button.BACK)) {
+        this.testState = State.TestMode.RESET;
+      }
+      break;
     case RESET:
       this.reset();
       if (movementController.buttonDown(Button.START)) {
-        this.testState.setStates(new TestState[] { TestState.START, TestState.DEFAULT });
-      }
-      break;
-    case START:
-      this.generalStart();
-      break;
-    case DEFAULT:
-      this.generalPeriodic();
-      // reset
-      if (movementController.buttonDown(Button.BACK)) {
-        this.testState.setState(TestState.RESET);
+        this.testState = State.TestMode.START;
       }
       break;
     }
-    this.testState.periodic();
-    this.driveState.periodic();
-    this.ballHatchState.periodic();
-    this.elevatorState.periodic();
   }
 
   @Override
@@ -275,7 +267,7 @@ public class Robot extends TimedRobot {
     this.driveTrain.reset();
   }
 
-  public void generalStart() {
+  public void generalInit() {
     if (!Constants.PRACTICE_ROBOT) {
       this.elevator.lowerArms();
       this.ballSystem.lowerArms();
@@ -292,26 +284,26 @@ public class Robot extends TimedRobot {
 
   public void generalPeriodic() {
     // drive
-    switch (this.driveState.getState()) {
+    switch (this.driveState) {
     case CONTROLLED:
-      Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER),
-          -movementController.getAxis(Axis.LEFT_Y), movementController.getAxis(Axis.RIGHT_X));
+      Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER), -movementController.getAxis(Axis.LEFT_Y),
+          movementController.getAxis(Axis.RIGHT_X));
       leftMotorTarget = Util.smoothDriveResult[0] * 10;
       rightMotorTarget = Util.smoothDriveResult[1] * 10;
       leftMotorOutput = driveTrain.setLeftMotorSpeed(leftMotorTarget);
       rightMotorOutput = driveTrain.setRightMotorSpeed(rightMotorTarget);
-      if(movementController.buttonPressed(Button.LEFT_BUMPER)) {
+      if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
         double target = driveTrain.getAngle() + 180;
         target = target > 360 ? target - 360 : target;
-        drivePosControl = new PosControl(target, 1, 3, t -> t*0.001, 3);
-        driveState.setState(DriveState.TURN);
+        drivePosControl = new PosControl(target, 1, 3, t -> t * 0.001, 3);
+        driveState = State.Drive.TURN;
       }
       break;
     case TURN:
       if (drivePosControl.onTarget()) {
-        this.driveState.setState(DriveState.CONTROLLED);
+        this.driveState = State.Drive.CONTROLLED;
       } else {
-        double speed = drivePosControl.getSpeed(this.driveTrain.getAngle());
+        double speed = drivePosControl.getSpeed(this.driveTrain.getAngle(), now);
         this.driveTrain.turn(speed);
       }
       break;
@@ -320,60 +312,39 @@ public class Robot extends TimedRobot {
     if (!Constants.PRACTICE_ROBOT) {
       // elevator
       if (actionsController.buttonPressed(Button.A)) {
-        elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
+        elevatorState = State.Elevator.STOP;
         elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
       }
       if (actionsController.buttonPressed(Button.B)) {
-        elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
+        elevatorState = State.Elevator.STOP;
         elevatorPosControl = new PosControl(19, 0.1, 0.5, t -> t, 1);
       }
       if (actionsController.buttonPressed(Button.X)) {
-        elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
+        elevatorState = State.Elevator.STOP;
         elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
       }
       if (actionsController.buttonPressed(Button.Y)) {
-        elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
+        elevatorState = State.Elevator.STOP;
         elevatorPosControl = new PosControl(0, 0.1, 0.5, t -> t, 1);
       }
-      /*
-       * if (actionsController.getAxis(Axis.D_PAD_X) > 0.2) {
-       * elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP,
-       * ElevatorState.GOTO }); elevatorState.getState().setPosControl(new
-       * PosControl(0, 0.1, 0.5, t -> t, 1)); } if
-       * (actionsController.getAxis(Axis.D_PAD_X) < -0.2) {
-       * elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP,
-       * ElevatorState.GOTO }); elevatorState.getState().setPosControl(new
-       * PosControl(75, 0.1, 0.5, t -> t, 1)); } if
-       * (actionsController.getAxis(Axis.D_PAD_Y) > 0.2) { elevatorState.setStates(new
-       * ElevatorState[] { ElevatorState.STOP, ElevatorState.GOTO });
-       * elevatorState.getState().setPosControl(new PosControl(0, 0.1, 0.5, t -> t,
-       * 1)); } if (actionsController.getAxis(Axis.D_PAD_Y) < -0.2) {
-       * elevatorState.setStates(new ElevatorState[] { ElevatorState.STOP,
-       * ElevatorState.GOTO }); elevatorState.getState().setPosControl(new
-       * PosControl(47, 0.1, 0.5, t -> t, 1)); }
-       */
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
         elevator.move(-leftYAxis);
-        elevatorState.setState(ElevatorState.CONTROLLED);
-        elevatorState.clearQueue();
+        elevatorState = State.Elevator.CONTROLLED;
       } else {
-        switch (elevatorState.getState()) {
+        switch (elevatorState) {
         case GOTO:
-          if (elevatorPosControl == null) {
-            elevatorState.setState(ElevatorState.CONTROLLED);
-            break;
-          }
-          double speed = elevatorPosControl.getSpeed(elevator.getHeight());
+          double speed = elevatorPosControl.getSpeed(elevator.getHeight(), now);
           if (speed < 0) {
             speed /= 2;
           }
           elevator.move(-speed);
           if (elevatorPosControl.onTarget()) {
-            elevatorState.setState(ElevatorState.CONTROLLED);
+            elevatorState = State.Elevator.CONTROLLED;
           }
           break;
         case STOP:
+          // TODO: code here
         case CONTROLLED:
           elevator.stop();
           break;
@@ -383,7 +354,7 @@ public class Robot extends TimedRobot {
       if (!movementController.buttonDown(Button.X)) {
         ballSystem.stopBallMotor();
       }
-      switch (ballHatchState.getState()) {
+      switch (ballHatchState) {
       case NONE:
         // pick up hatch
         if (movementController.buttonPressed(Button.A)) {
@@ -407,8 +378,7 @@ public class Robot extends TimedRobot {
 
         // release ball
         if (movementController.buttonDown(Button.Y)) {
-          this.ballHatchState.setStates(new BallHatchState[] { BallHatchState.RAISE_ARMS, BallHatchState.PUNCH_BALL, BallHatchState.RETRACT_PUNCHER,
-              BallHatchState.LOWER_ARMS, BallHatchState.NONE });
+          this.ballHatchState = State.BallHatch.RAISE_ARMS;
         }
         break;
       case RAISE_ARMS:
@@ -426,9 +396,10 @@ public class Robot extends TimedRobot {
       }
     }
   }
+
   @Override
   public void robotPeriodic() {
-    Timer.updateTime();
+    now = System.currentTimeMillis();
   }
 
   @Override
