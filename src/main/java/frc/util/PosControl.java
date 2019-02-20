@@ -84,7 +84,12 @@ public class PosControl {
 
         // use the rate function with the current time and restrict it between the min
         // and max speed
-        double speed = Math.max(Math.min(rateFunc.apply(time), maxSpeed - minSpeed) + minSpeed, minSpeed);
+        double speed = rateFunc.apply(time); // TODO: fix this part maybe?
+        if(speed < 0) {
+            speed = -Math.min(Math.max(-speed, maxSpeed - minSpeed) + minSpeed, minSpeed);
+        } else {
+            speed = Math.max(Math.min(speed, maxSpeed - minSpeed) + minSpeed, minSpeed);
+        }
 
         // tweak the speed to account for distrubances in the position
         double timeDiff = time - lastTime;

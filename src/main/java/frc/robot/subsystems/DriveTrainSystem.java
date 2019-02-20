@@ -31,6 +31,7 @@ public class DriveTrainSystem {
 
     /**
      * Sets the left motor's speed
+     * 
      * @param speed - the speed to set the left motor to; should be -1 to +1
      * @return the rate limited speed the motor was actually set to
      */
@@ -42,6 +43,7 @@ public class DriveTrainSystem {
 
     /**
      * Sets the right motor's speed
+     * 
      * @param speed - the speed to set the left motor to; should be -1 to +1
      * @return the rate limited speed the motor was actually set to
      */
@@ -52,9 +54,11 @@ public class DriveTrainSystem {
     }
 
     /**
-     * Sets the speed of both motors to the same thing.
-     * (the right motor is automatically inversed so it will drive straight)
-     * @param speed - the speed to set the left and right motor to; should be -1 to +1
+     * Sets the speed of both motors to the same thing. (the right motor is
+     * automatically inversed so it will drive straight)
+     * 
+     * @param speed - the speed to set the left and right motor to; should be -1 to
+     *              +1
      */
     public void setSpeed(double speed) {
         this.setLeftMotorSpeed(speed);
@@ -62,14 +66,14 @@ public class DriveTrainSystem {
     }
 
     /**
-     * Sets the speed of both motors to the same thing but inverts the right so it turns.
-     * Also divides the speed by 2 for consistency.
-     * (the right motor is inversed again so it will turn)
+     * Sets the speed of both motors to the same thing but inverts the right so it
+     * turns. Also divides the speed by 2 for consistency. (the right motor is
+     * inversed again so it will turn)
+     * 
      * @param speed - the speed at which the robot should turn; should be -2 to +2
      */
-    public void turn(double speed) {
-        this.setLeftMotorSpeed(speed/2);
-        this.setRightMotorSpeed(-speed/2);
+    public double[] turn(double speed) {
+        return new double[] { this.setLeftMotorSpeed(speed / 2), this.setRightMotorSpeed(-speed / 2) };
     }
 
     /**
