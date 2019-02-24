@@ -117,39 +117,59 @@ public class Robot extends TimedRobot {
   }
 
   private void initDashboard() {
-    this.ntVariableHandles = new int[] { getNTVHandle("leftMotorSpeed"), getNTVHandle("rightMotorSpeed"),
-        getNTVHandle("leftMotorOutputPercent"), getNTVHandle("rightMotorOutputPercent"), getNTVHandle("angle"),
-        getNTVHandle("ballDetected"), getNTVHandle("elevatorHeight"), getNTVHandle("leftMotorTarget"),
-        getNTVHandle("rightMotorTarget"), getNTVHandle("leftMotorOutput"), getNTVHandle("rightMotorOutput"),
-        getNTVHandle("elevatorTarget"), getNTVHandle("elevatorOutput") };
+    this.ntVariableHandles = new int[14];
+    //drive
+    genNTVHandle("leftMotorSpeed");
+    genNTVHandle("rightMotorSpeed");
+    genNTVHandle("leftMotorOutputPercent");
+    genNTVHandle("rightMotorOutputPercent");
+    genNTVHandle("angle");
+
+    genNTVHandle("leftMotorTarget");
+    genNTVHandle("rightMotorTarget");
+    genNTVHandle("leftMotorOutput");
+    genNTVHandle("rightMotorOutput");
+    genNTVHandle("driveTarget");
+    //not on practice
+    genNTVHandle("ballDetected");
+    genNTVHandle("elevatorHeight");
+    genNTVHandle("elevatorTarget");
+    genNTVHandle("elevatorOutput");
   }
 
   private void updateDashboard() {
-    setNTDouble(0, this.driveTrain.getLeftMotorSpeed());
-    setNTDouble(1, this.driveTrain.getRightMotorSpeed());
-    setNTDouble(2, this.driveTrain.getLeftMotorOutputPercent());
-    setNTDouble(3, this.driveTrain.getRightMotorOutputPercent());
-    setNTDouble(4, this.driveTrain.getAngle());
-    setNTBoolean(5, this.ballSystem.sensedBall());
-    setNTDouble(6, this.elevator.getHeight());
-    setNTDouble(7, leftMotorTarget);
-    setNTDouble(8, rightMotorTarget);
-    setNTDouble(9, leftMotorOutput);
-    setNTDouble(10, rightMotorOutput);
-    setNTDouble(11, elevatorTarget);
-    setNTDouble(12, elevatorOutput);
+    this.currentNTHandle = 0;
+    setNTDouble(this.driveTrain.getLeftMotorSpeed());
+    setNTDouble(this.driveTrain.getRightMotorSpeed());
+    setNTDouble(this.driveTrain.getLeftMotorOutputPercent());
+    setNTDouble(this.driveTrain.getRightMotorOutputPercent());
+    setNTDouble(this.driveTrain.getAngle());
+
+    setNTDouble(this.driveTrain.getLeftMotorTarget());
+    setNTDouble(this.driveTrain.getRightMotorTarget());
+    setNTDouble(this.driveTrain.getLeftMotorOutput());
+    setNTDouble(this.driveTrain.getRightMotorOutput());
+    setNTDouble(driveTarget);
+    if(!Constants.PRACTICE_ROBOT) {
+      setNTBoolean(this.ballSystem.sensedBall());
+      setNTDouble(this.elevator.getHeight());
+      setNTDouble(elevatorTarget);
+      setNTDouble(elevatorOutput);
+    }
   }
 
-  private int getNTVHandle(String key) {
-    return SmartDashboard.getEntry(key).getHandle();
+  private int currentNTHandle = 0;
+
+  private void genNTVHandle(String key) {
+    this.ntVariableHandles[currentNTHandle++] = SmartDashboard.getEntry(key).getHandle();
   }
 
-  private void setNTDouble(int handle, double value) {
-    NetworkTablesJNI.setDouble(this.ntVariableHandles[handle], 0, value, false);
+  private void setNTDouble(double value) {
+    NetworkTablesJNI.setDouble(this.ntVariableHandles[currentNTHandle++], 0, value, false);
   }
 
-  private void setNTBoolean(int handle, boolean value) {
-    NetworkTablesJNI.setBoolean(this.ntVariableHandles[handle], 0, value, false);
+  private void setNTBoolean(boolean value) {
+    NetworkTablesJNI.setBoolean(this.ntVariableHandles[currentNTHandle++], 0, value, false);
   }
 
   /**
@@ -280,12 +300,8 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private double leftMotorTarget;
-  private double rightMotorTarget;
-  private double leftMotorOutput;
-  private double rightMotorOutput;
-
   private PosControl drivePosControl;
+  private double driveTarget;
   private PosControl elevatorPosControl;
   private double elevatorTarget;
   private double elevatorOutput;
@@ -296,17 +312,10 @@ public class Robot extends TimedRobot {
     double yAxis = movementController.getAxis(Axis.LEFT_Y);
     switch (this.driveState) {
     case CONTROLLED:
-      Util.smoothDrive(movementController.buttonDown(Button.RIGHT_BUMPER), -yAxis, xAxis);
-      leftMotorTarget = Util.smoothDriveResult[0] * 10;
-      rightMotorTarget = Util.smoothDriveResult[1] * 10;
-      leftMotorOutput = driveTrain.setLeftMotorSpeed(leftMotorTarget);
-      rightMotorOutput = driveTrain.setRightMotorSpeed(rightMotorTarget);
+      this.driveTrain.drive(-yAxis, xAxis);
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
-        double target = driveTrain.getAngle() + 180;
-        if (target > 360) {
-          target = target - 360;
-        }
-        drivePosControl = new PosControl(target, 1, 3, t -> t * 0.001, 3);
+        driveTarget = driveTrain.getAngle() + 180;
+        drivePosControl = new PosControl(driveTarget, 1, 3, t -> t * 0.1, 3);
         driveState = State.Drive.TURN;
       }
       break;
@@ -315,9 +324,7 @@ public class Robot extends TimedRobot {
         this.driveState = State.Drive.CONTROLLED;
       } else {
         double speed = drivePosControl.getSpeed(this.driveTrain.getAngle(), now);
-        double[] motorOutputs = this.driveTrain.turn(speed);
-        leftMotorOutput = motorOutputs[0];
-        rightMotorOutput = motorOutputs[1];
+        this.driveTrain.turn(speed);
       }
       break;
     }

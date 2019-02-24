@@ -2,6 +2,8 @@ package frc.util;
 
 import java.util.function.Function;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class PosControl {
 
     private double target;
@@ -11,11 +13,11 @@ public class PosControl {
     private double deadband;
 
     private double halfWay;
-    private double halfWayTime;
 
     private double lastPos;
-    private double lastTime;
     private double lastSpeed;
+    private long lastTime;
+
     private int onTargetCount;
 
     public static void main(String[]args) {
@@ -46,11 +48,9 @@ public class PosControl {
         this.rateFunc = rateFunc;
         this.deadband = deadband;
 
-        this.halfWay = (target - deadband) / 2;
-        this.halfWayTime = 0;
+        this.halfWay = (target - deadband)/2;
 
         this.lastPos = 0;
-        this.lastTime = 0;
         this.lastSpeed = 0;
         this.onTargetCount = 0;
     }
@@ -59,11 +59,12 @@ public class PosControl {
      * Get the calculated speed that should be output
      * 
      * @param currentPos  - the distance you've travelled from the start
-     * @param currentTime - the current time in millis
+     * @param currentTime - the current time in ms
      * @return the speed to output
      */
     public double getSpeed(double currentPos, long currentTime) {
-        double distanceToTarget = Math.abs(target - currentPos);
+        double rawDistanceToTarget = target - currentPos;
+        double distanceToTarget = Math.abs(rawDistanceToTarget);
 
         // if within the deadband
         if (distanceToTarget < deadband) {
@@ -71,20 +72,16 @@ public class PosControl {
             return 0;
         }
 
-        double time;
-        // If the distance travelled is more than half way, change the time to start
-        // slowing down rather than speeding up
-        // Add the speed at 0 time to account for the very first iteration
-        if (currentPos < halfWay + rateFunc.apply(0.0)) {
-            time = currentTime;
-            halfWayTime = currentTime;
-        } else {
-            time = halfWayTime * 2 - currentTime;
+        double distance = rawDistanceToTarget;
+        if(distance > halfWay) {
+            distance = (target - deadband) - distance;
         }
+
+        SmartDashboard.putNumber("distance", distance);
 
         // use the rate function with the current time and restrict it between the min
         // and max speed
-        double speed = rateFunc.apply(time); // TODO: fix this part maybe?
+        double speed = rateFunc.apply(distance);
         if(speed < 0) {
             speed = -Math.min(Math.max(-speed, maxSpeed - minSpeed) + minSpeed, minSpeed);
         } else {
@@ -92,13 +89,13 @@ public class PosControl {
         }
 
         // tweak the speed to account for distrubances in the position
-        double timeDiff = time - lastTime;
+        double timeDiff = currentTime - lastTime;
         double speedDiff = (currentPos - lastPos) / timeDiff - lastSpeed / timeDiff;
-        speed += speedDiff / speed;
+        speed += speedDiff;
 
         lastPos = currentPos;
-        lastTime = currentTime;
         lastSpeed = speed;
+        lastTime = currentTime;
 
         // inverse the output if it's past the target
         return currentPos - target < 0 ? speed : -speed;

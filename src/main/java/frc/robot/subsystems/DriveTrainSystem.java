@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.interfaces.Gyro;
+import com.analog.adis16448.frc.ADIS16448_IMU;
+
 import frc.robot.subsystems.base.EncoderMotor;
 import frc.util.RateLimiter;
 
@@ -9,10 +10,17 @@ public class DriveTrainSystem {
     private EncoderMotor leftMotor;
     private EncoderMotor rightMotor;
 
-    private Gyro gyro;
+    private ADIS16448_IMU gyro;
 
     private RateLimiter rightRateLimiter;
     private RateLimiter leftRateLimiter;
+
+    // information
+
+    private double leftMotorTarget;
+    private double rightMotorTarget;
+    private double leftMotorOutput;
+    private double rightMotorOutput;
 
     public DriveTrainSystem() {
         this(-1);
@@ -22,7 +30,7 @@ public class DriveTrainSystem {
         this.setRateLimit(rateLimit);
     }
 
-    public void init(EncoderMotor leftMotor, EncoderMotor rightMotor, Gyro gyro) {
+    public void init(EncoderMotor leftMotor, EncoderMotor rightMotor, ADIS16448_IMU gyro) {
         this.leftMotor = leftMotor;
         this.rightMotor = rightMotor;
         this.gyro = gyro;
@@ -35,10 +43,11 @@ public class DriveTrainSystem {
      * @param speed - the speed to set the left motor to; should be -1 to +1
      * @return the rate limited speed the motor was actually set to
      */
-    public double setLeftMotorSpeed(double speed) {
+    public void setLeftMotorSpeed(double speed) {
+        this.leftMotorTarget = speed;
         speed = leftRateLimiter.get(speed, leftMotor.getSpeed());
         this.leftMotor.setSpeed(speed);
-        return speed;
+        this.leftMotorOutput = speed;
     }
 
     /**
@@ -47,10 +56,11 @@ public class DriveTrainSystem {
      * @param speed - the speed to set the left motor to; should be -1 to +1
      * @return the rate limited speed the motor was actually set to
      */
-    public double setRightMotorSpeed(double speed) {
+    public void setRightMotorSpeed(double speed) {
+        this.rightMotorTarget = speed;
         speed = rightRateLimiter.get(speed, rightMotor.getSpeed());
         this.rightMotor.setSpeed(speed);
-        return speed;
+        this.rightMotorOutput = speed;
     }
 
     /**
@@ -72,8 +82,9 @@ public class DriveTrainSystem {
      * 
      * @param speed - the speed at which the robot should turn; should be -2 to +2
      */
-    public double[] turn(double speed) {
-        return new double[] { this.setLeftMotorSpeed(speed / 2), this.setRightMotorSpeed(-speed / 2) };
+    public void turn(double speed) {
+        this.setLeftMotorSpeed(speed / 2);
+        this.setRightMotorSpeed(-speed / 2);
     }
 
     /**
@@ -116,6 +127,52 @@ public class DriveTrainSystem {
     }
 
     public double getAngle() {
-        return gyro.getAngle();
+        return gyro.getAngleZ();
+    }
+
+    public void drive(double fb, double lr) {
+        fb = smooth(fb, 0.2)*10;
+        lr = smooth(lr, 0.2)*10;
+        if (lr == 0) {
+            this.setSpeed(fb);
+        } else if (fb == 0) {
+            this.turn(lr);
+        } else {
+            double hlr = lr * 0.5;
+
+            double left = fb + hlr;
+            double right = fb - hlr;
+            this.setLeftMotorSpeed(left);
+            this.setRightMotorSpeed(right);
+        }
+    }
+
+    private double smooth(double value, double deadband) {
+        int power = 2;
+        if (value > deadband) {
+            double newValue = (value - deadband) / (1 - deadband);
+            return Math.pow(newValue, power);
+        }
+        if (value < -deadband) {
+            double newValue = (value + deadband) / (1 - deadband);
+            return -Math.abs(Math.pow(newValue, power));
+        }
+        return 0;
+    }
+
+    public double getLeftMotorTarget() {
+        return this.leftMotorTarget;
+    }
+
+    public double getRightMotorTarget() {
+        return this.rightMotorTarget;
+    }
+
+    public double getLeftMotorOutput() {
+        return this.leftMotorOutput;
+    }
+
+    public double getRightMotorOutput() {
+        return this.rightMotorOutput;
     }
 }
