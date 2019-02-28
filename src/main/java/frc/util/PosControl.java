@@ -4,6 +4,12 @@ import java.util.function.Function;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+
+
+
+
+
+
 public class PosControl {
 
     private double target;
@@ -11,6 +17,7 @@ public class PosControl {
     private double maxSpeed;
     private Function<Double, Double> rateFunc;
     private double deadband;
+    private double startPos;
 
     private double halfWay;
 
@@ -21,13 +28,13 @@ public class PosControl {
     private int onTargetCount;
 
     public static void main(String[]args) {
-        PosControl test = new PosControl(100, 2, 5, x -> 0.5*x, 5);
+        /*PosControl test = new PosControl(100, 2, 5, x -> 0.5*x, 5);
         double pos = 0;
         for(int i = 1; i < 50 && !test.onTarget(); i++) {
             long time = i;
             pos += test.getSpeed(pos, time);
             System.out.println(time + ": " + pos);
-        }
+        }*/
     }
 
     /**
@@ -40,15 +47,16 @@ public class PosControl {
      * @param deadband - The distance before the target you want to set the speed to
      *                 0 to account for inertia and things
      */
-    public PosControl(double target, double minSpeed, double maxSpeed, Function<Double, Double> rateFunc,
+    public PosControl(double target, double currentPos, double minSpeed, double maxSpeed, Function<Double, Double> rateFunc,
             double deadband) {
         this.target = target;
         this.minSpeed = minSpeed;
         this.maxSpeed = maxSpeed;
         this.rateFunc = rateFunc;
         this.deadband = deadband;
+        this.startPos = currentPos;
 
-        this.halfWay = (target - deadband)/2;
+        this.halfWay = ((target - currentPos) - deadband)/2;
 
         this.lastPos = 0;
         this.lastSpeed = 0;
@@ -65,7 +73,7 @@ public class PosControl {
     public double getSpeed(double currentPos, long currentTime) {
         double rawDistanceToTarget = target - currentPos;
         double distanceToTarget = Math.abs(rawDistanceToTarget);
-
+ 
         // if within the deadband
         if (distanceToTarget < deadband) {
             onTargetCount++;
@@ -73,32 +81,43 @@ public class PosControl {
         }
 
         double distance = rawDistanceToTarget;
-        if(distance > halfWay) {
-            distance = (target - deadband) - distance;
+        if(distance < halfWay) {
+            distance = (target - startPos - deadband) - distance;
         }
 
-        SmartDashboard.putNumber("distance", distance);
+        SmartDashboard.putNumber("test", distance);
 
         // use the rate function with the current time and restrict it between the min
         // and max speed
         double speed = rateFunc.apply(distance);
         if(speed < 0) {
-            speed = -Math.min(Math.max(-speed, maxSpeed - minSpeed) + minSpeed, minSpeed);
+            speed = -setBetween(-speed);
         } else {
-            speed = Math.max(Math.min(speed, maxSpeed - minSpeed) + minSpeed, minSpeed);
+            speed = setBetween(speed);
         }
+        SmartDashboard.putNumber("test2", speed);
 
         // tweak the speed to account for distrubances in the position
-        double timeDiff = currentTime - lastTime;
-        double speedDiff = (currentPos - lastPos) / timeDiff - lastSpeed / timeDiff;
-        speed += speedDiff;
+        //double timeDiff = currentTime - lastTime;
+        //double speedDiff = (currentPos - lastPos) / timeDiff - lastSpeed;
+        //speed += speedDiff;
 
-        lastPos = currentPos;
-        lastSpeed = speed;
-        lastTime = currentTime;
+        //lastPos = currentPos;
+        //lastSpeed = speed;
+        //lastTime = currentTime;
 
         // inverse the output if it's past the target
         return currentPos - target < 0 ? speed : -speed;
+    }
+
+    public double setBetween(double n) {
+        if(n < this.minSpeed) {
+            return this.minSpeed;
+        }
+        if(n > this.maxSpeed) {
+            return this.maxSpeed;
+        }
+        return n;
     }
 
     /**

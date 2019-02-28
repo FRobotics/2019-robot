@@ -131,12 +131,13 @@ public class DriveTrainSystem {
     }
 
     public void drive(double fb, double lr) {
-        fb = smooth(fb, 0.2)*10;
-        lr = smooth(lr, 0.2)*10;
+        double deadband = 0.2;
+        fb = smooth(fb, deadband)*10;
+        lr = smooth(lr, deadband)*10;
         if (lr == 0) {
             this.setSpeed(fb);
         } else if (fb == 0) {
-            this.turn(lr);
+            this.turn(lr*0.5);
         } else {
             double hlr = lr * 0.5;
 
@@ -148,7 +149,7 @@ public class DriveTrainSystem {
     }
 
     private double smooth(double value, double deadband) {
-        int power = 2;
+        int power = 3;
         if (value > deadband) {
             double newValue = (value - deadband) / (1 - deadband);
             return Math.pow(newValue, power);

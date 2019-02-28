@@ -180,7 +180,7 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
-    this.driveTrain.setRateLimit(1);
+    this.driveTrain.setRateLimit(2);
     if (!Constants.PRACTICE_ROBOT) {
       this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
           new DigitalInput(2));
@@ -314,8 +314,12 @@ public class Robot extends TimedRobot {
     case CONTROLLED:
       this.driveTrain.drive(-yAxis, xAxis);
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
+        driveTarget = driveTrain.getAngle() - 180;
+        drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
+        driveState = State.Drive.TURN;
+      } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
         driveTarget = driveTrain.getAngle() + 180;
-        drivePosControl = new PosControl(driveTarget, 1, 3, t -> t * 0.1, 3);
+        drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
         driveState = State.Drive.TURN;
       }
       break;
@@ -362,7 +366,7 @@ public class Robot extends TimedRobot {
         elevatorTimer.update(now);
         elevatorTimer.start(100);
         this.elevatorTarget = elevatorTarget;
-        elevatorPosControl = new PosControl(elevatorTarget, 0.1, 0.8, t -> 0.02 * t, 1);
+        elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(), 0.1, 0.8, t -> 0.02 * t, 1);
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
