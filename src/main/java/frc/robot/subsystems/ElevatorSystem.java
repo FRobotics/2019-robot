@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Counter;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import frc.robot.subsystems.base.Motor;
 
 public class ElevatorSystem {
@@ -10,11 +8,11 @@ public class ElevatorSystem {
     private final static double heightMult = 1000000.0/10.0/2.54;
 
     private Motor winch;
-    private DoubleSolenoid brake;
-    private DoubleSolenoid arms;
+    private Solenoid4150 brake;
+    private Solenoid4150 arms;
     private Counter sensor;
 
-    public void init(Motor winch, DoubleSolenoid brake, DoubleSolenoid arms, Counter sensor) {
+    public void init(Motor winch, Solenoid4150 brake, Solenoid4150 arms, Counter sensor) {
         this.winch = winch;
         this.brake = brake;
         this.arms = arms;
@@ -24,7 +22,7 @@ public class ElevatorSystem {
     }
 
     public void move(double speed) {
-        brake.set(Value.kReverse);
+        brake.set(false);
         winch.setPercentOutput(-speed);
     }
 
@@ -38,15 +36,15 @@ public class ElevatorSystem {
 
     public void stop() {
         winch.setSpeed(0);
-        brake.set(Value.kForward);
+        brake.set(true);
     }
 
     public void lowerArms() {
-        arms.set(Value.kForward);
+        arms.set(true);
     }
 
     public void raiseArms() {
-        arms.set(Value.kReverse);
+        arms.set(false);
     }
 
     public void reset() {

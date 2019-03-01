@@ -1,22 +1,20 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 
 public class HatchSystem {
 
-    private DoubleSolenoid solenoid;
+    private Solenoid4150 solenoid;
 
-    public void init(DoubleSolenoid solenoid) {
+    public void init(Solenoid4150 solenoid) {
         this.solenoid = solenoid;
     }
 
     public void comeTogether() {
-        this.solenoid.set(Value.kForward);
+        this.solenoid.set(true);
     }
 
     public void pushOutward() {
-        this.solenoid.set(Value.kReverse);
+        this.solenoid.set(false);
     }
 
     public void reset() {

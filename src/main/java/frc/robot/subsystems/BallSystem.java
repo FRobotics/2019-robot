@@ -1,18 +1,16 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import frc.robot.subsystems.base.Motor;
 
 public class BallSystem {
     private Motor motor;
     private DigitalInput sensor;
-    private DoubleSolenoid arms;
-    private DoubleSolenoid puncher;
+    private Solenoid4150 arms;
+    private Solenoid4150 puncher;
 
 
-    public void init(Motor motor, DoubleSolenoid arms, DoubleSolenoid puncher, DigitalInput sensor) {
+    public void init(Motor motor, Solenoid4150 arms, Solenoid4150 puncher, DigitalInput sensor) {
         this.motor = motor;
         this.arms = arms;
         this.puncher = puncher;
@@ -28,19 +26,19 @@ public class BallSystem {
     }
 
     public void lowerArms() {
-        arms.set(Value.kForward);
+        arms.set(true);
     }
 
     public void raiseArms() {
-        arms.set(Value.kReverse);
+        arms.set(false);
     }
 
     public void punchBall() {
-        puncher.set(Value.kForward);
+        puncher.set(true);
     }
 
     public void retractPuncher() {
-        puncher.set(Value.kReverse);
+        puncher.set(false);
     }
 
     public boolean sensedBall() {

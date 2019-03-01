@@ -25,6 +25,7 @@ import frc.robot.subsystems.BallSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
+import frc.robot.subsystems.Solenoid4150;
 import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.robot.subsystems.base.CANMotor;
 import frc.util.CountdownTimer;
@@ -112,6 +113,12 @@ public class Robot extends TimedRobot {
       initDashboard();
       while (robotRunning) {
         updateDashboard();
+        try {
+          Thread.sleep(20);
+        } catch (InterruptedException e) {
+          System.out.println("Network Table thread interrupted:");
+          e.printStackTrace();
+        }
       }
     }
   }
@@ -182,11 +189,11 @@ public class Robot extends TimedRobot {
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
     this.driveTrain.setRateLimit(2);
     if (!Constants.PRACTICE_ROBOT) {
-      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new DoubleSolenoid(1, 3, 2), new DoubleSolenoid(1, 7, 6),
+      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new Solenoid4150(new DoubleSolenoid(1, 3, 2)), new Solenoid4150(new DoubleSolenoid(1, 7, 6)),
           new DigitalInput(2));
-      this.elevator.init(new CANMotor(new TalonSRX(9)), new DoubleSolenoid(0, 5, 4), new DoubleSolenoid(1, 1, 0),
+      this.elevator.init(new CANMotor(new TalonSRX(9)), new Solenoid4150(new DoubleSolenoid(0, 5, 4)), new Solenoid4150(new DoubleSolenoid(1, 1, 0)),
           new Counter(3));
-      this.hatchSystem.init(new DoubleSolenoid(1, 5, 4));
+      this.hatchSystem.init(new Solenoid4150(new DoubleSolenoid(1, 5, 4)));
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));

@@ -4,12 +4,6 @@ import java.util.function.Function;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-
-
-
-
-
-
 public class PosControl {
 
     private double target;
