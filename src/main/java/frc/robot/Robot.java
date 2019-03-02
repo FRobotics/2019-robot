@@ -28,6 +28,7 @@ import frc.robot.subsystems.HatchSystem;
 import frc.robot.subsystems.Solenoid4150;
 import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.robot.subsystems.base.CANMotor;
+import frc.util.AltPosControl;
 import frc.util.CountdownTimer;
 import frc.util.PosControl;
 
@@ -307,9 +308,9 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private PosControl drivePosControl;
+  private AltPosControl drivePosControl;
   private double driveTarget;
-  private PosControl elevatorPosControl;
+  private AltPosControl elevatorPosControl;
   private double elevatorTarget;
   private double elevatorOutput;
 
@@ -321,12 +322,13 @@ public class Robot extends TimedRobot {
     case CONTROLLED:
       this.driveTrain.drive(-yAxis, xAxis);
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
-        driveTarget = driveTrain.getAngle() - 180;
-        drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
+        driveTarget = -180 + this.driveTrain.getAngle();
+        // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
+        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 55);
         driveState = State.Drive.TURN;
       } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
-        driveTarget = driveTrain.getAngle() + 180;
-        drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
+        driveTarget = 180 + this.driveTrain.getAngle();
+        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 55);
         driveState = State.Drive.TURN;
       }
       break;
@@ -334,7 +336,7 @@ public class Robot extends TimedRobot {
       if (drivePosControl.onTarget() || Math.abs(xAxis) > 0.2 || Math.abs(yAxis) > 0.2) {
         this.driveState = State.Drive.CONTROLLED;
       } else {
-        double speed = drivePosControl.getSpeed(this.driveTrain.getAngle(), now);
+        double speed = drivePosControl.getSpeed(this.driveTrain.getAngle());
         this.driveTrain.turn(speed);
       }
       break;
@@ -372,8 +374,9 @@ public class Robot extends TimedRobot {
         elevatorState = State.Elevator.STOP;
         elevatorTimer.update(now);
         elevatorTimer.start(100);
-        this.elevatorTarget = elevatorTarget;
-        elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(), 0.1, 0.8, t -> 0.02 * t, 1);
+        this.elevatorTarget = elevatorTarget + elevator.getHeight();
+        // elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(), 0.1, 0.8, t -> 0.02 * t, 1);
+        elevatorPosControl = new AltPosControl(elevatorTarget, 1, 3, 0.05, 0.2, true, 24);
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
@@ -386,7 +389,7 @@ public class Robot extends TimedRobot {
       } else {
         switch (elevatorState) {
         case GOTO:
-          double speed = elevatorPosControl.getSpeed(elevator.getHeight(), now);
+          double speed = elevatorPosControl.getSpeed(elevator.getHeight());
           elevatorOutput = speed;
           elevator.move(speed);
           if (elevatorPosControl.onTarget()) {

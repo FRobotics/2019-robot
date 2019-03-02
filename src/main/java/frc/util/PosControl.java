@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class PosControl {
 
     private double target;
+    private double maybeTarget;
     private double minSpeed;
     private double maxSpeed;
     private Function<Double, Double> rateFunc;
@@ -21,14 +22,12 @@ public class PosControl {
 
     private int onTargetCount;
 
-    public static void main(String[]args) {
-        /*PosControl test = new PosControl(100, 2, 5, x -> 0.5*x, 5);
-        double pos = 0;
-        for(int i = 1; i < 50 && !test.onTarget(); i++) {
-            long time = i;
-            pos += test.getSpeed(pos, time);
-            System.out.println(time + ": " + pos);
-        }*/
+    public static void main(String[] args) {
+        /*
+         * PosControl test = new PosControl(100, 2, 5, x -> 0.5*x, 5); double pos = 0;
+         * for(int i = 1; i < 50 && !test.onTarget(); i++) { long time = i; pos +=
+         * test.getSpeed(pos, time); System.out.println(time + ": " + pos); }
+         */
     }
 
     /**
@@ -41,8 +40,8 @@ public class PosControl {
      * @param deadband - The distance before the target you want to set the speed to
      *                 0 to account for inertia and things
      */
-    public PosControl(double target, double currentPos, double minSpeed, double maxSpeed, Function<Double, Double> rateFunc,
-            double deadband) {
+    public PosControl(double target, double currentPos, double minSpeed, double maxSpeed,
+            Function<Double, Double> rateFunc, double deadband) {
         this.target = target;
         this.minSpeed = minSpeed;
         this.maxSpeed = maxSpeed;
@@ -50,7 +49,8 @@ public class PosControl {
         this.deadband = deadband;
         this.startPos = currentPos;
 
-        this.halfWay = ((target - currentPos) - deadband)/2;
+        this.maybeTarget = Math.abs(target + (deadband * (target < 0 ? 1 : -1)));
+        this.halfWay = maybeTarget / 2;
 
         this.lastPos = 0;
         this.lastSpeed = 0;
@@ -65,50 +65,45 @@ public class PosControl {
      * @return the speed to output
      */
     public double getSpeed(double currentPos, long currentTime) {
-        double rawDistanceToTarget = target - currentPos;
+        double rawDistanceToTarget = (target + startPos) - currentPos;
         double distanceToTarget = Math.abs(rawDistanceToTarget);
- 
+
         // if within the deadband
         if (distanceToTarget < deadband) {
             onTargetCount++;
             return 0;
         }
 
-        double distance = rawDistanceToTarget;
-        if(distance < halfWay) {
-            distance = (target - startPos - deadband) - distance;
+        double distance = distanceToTarget;
+        if (distance > halfWay) {
+            distance = maybeTarget - distance;
         }
 
         SmartDashboard.putNumber("test", distance);
 
         // use the rate function with the current time and restrict it between the min
         // and max speed
-        double speed = rateFunc.apply(distance);
-        if(speed < 0) {
-            speed = -setBetween(-speed);
-        } else {
-            speed = setBetween(speed);
-        }
+        double speed = setBetween(rateFunc.apply(distance));
         SmartDashboard.putNumber("test2", speed);
 
         // tweak the speed to account for distrubances in the position
-        //double timeDiff = currentTime - lastTime;
-        //double speedDiff = (currentPos - lastPos) / timeDiff - lastSpeed;
-        //speed += speedDiff;
+        // double timeDiff = currentTime - lastTime;
+        // double speedDiff = (currentPos - lastPos) / timeDiff - lastSpeed;
+        // speed += speedDiff;
 
-        //lastPos = currentPos;
-        //lastSpeed = speed;
-        //lastTime = currentTime;
+        // lastPos = currentPos;
+        // lastSpeed = speed;
+        // lastTime = currentTime;
 
         // inverse the output if it's past the target
         return currentPos - target < 0 ? speed : -speed;
     }
 
     public double setBetween(double n) {
-        if(n < this.minSpeed) {
+        if (n < this.minSpeed) {
             return this.minSpeed;
         }
-        if(n > this.maxSpeed) {
+        if (n > this.maxSpeed) {
             return this.maxSpeed;
         }
         return n;
