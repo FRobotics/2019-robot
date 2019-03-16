@@ -115,7 +115,7 @@ public class Robot extends TimedRobot {
       while (robotRunning) {
         updateDashboard();
         try {
-          Thread.sleep(20);
+          Thread.sleep(1000);
         } catch (InterruptedException e) {
           System.out.println("Network Table thread interrupted:");
           e.printStackTrace();
@@ -192,7 +192,7 @@ public class Robot extends TimedRobot {
     if (!Constants.PRACTICE_ROBOT) {
       this.ballSystem.init(new CANMotor(new VictorSPX(15)), new Solenoid4150(new DoubleSolenoid(1, 3, 2)), new Solenoid4150(new DoubleSolenoid(1, 7, 6)),
           new DigitalInput(2));
-      this.elevator.init(new CANMotor(new TalonSRX(9)), new Solenoid4150(new DoubleSolenoid(0, 5, 4)), new Solenoid4150(new DoubleSolenoid(1, 1, 0)),
+      this.elevator.init(new CANMotor(new TalonSRX(9)).invert(), new Solenoid4150(new DoubleSolenoid(0, 5, 4)), new Solenoid4150(new DoubleSolenoid(1, 1, 0)),
           new Counter(3));
       this.hatchSystem.init(new Solenoid4150(new DoubleSolenoid(1, 5, 4)));
     }
@@ -281,9 +281,9 @@ public class Robot extends TimedRobot {
       }
     case CONTROLLED:
       this.generalPeriodic();
-      if (movementController.buttonDown(Button.BACK)) {
-        this.testState = State.TestMode.RESET;
-      }
+      //if (movementController.buttonDown(Button.BACK)) {
+      //  this.testState = State.TestMode.RESET;
+      //}
       break;
     case RESET:
       this.reset();
@@ -318,17 +318,23 @@ public class Robot extends TimedRobot {
     // drive
     double xAxis = movementController.getAxis(Axis.RIGHT_X);
     double yAxis = movementController.getAxis(Axis.LEFT_Y);
+    if (movementController.buttonDown(Button.BACK)) {
+      this.reset();
+    }
+    if (movementController.buttonDown(Button.START)) {
+      this.generalInit();
+    }
     switch (this.driveState) {
     case CONTROLLED:
       this.driveTrain.drive(-yAxis, xAxis);
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
-        driveTarget = -180 + this.driveTrain.getAngle();
+        driveTarget = -90 + this.driveTrain.getAngle();
         // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
-        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 55);
+        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
         driveState = State.Drive.TURN;
       } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
-        driveTarget = 180 + this.driveTrain.getAngle();
-        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 55);
+        driveTarget = 90 + this.driveTrain.getAngle();
+        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
         driveState = State.Drive.TURN;
       }
       break;
@@ -362,7 +368,7 @@ public class Robot extends TimedRobot {
           elevatorTarget = 73;
         }
       }
-      if (actionsController.buttonPressed(Button.X)) {
+      if (actionsController.buttonPressed(Button.Y)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
           elevatorTarget = 80;
@@ -376,15 +382,11 @@ public class Robot extends TimedRobot {
         elevatorTimer.start(100);
         this.elevatorTarget = elevatorTarget + elevator.getHeight();
         // elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(), 0.1, 0.8, t -> 0.02 * t, 1);
-        elevatorPosControl = new AltPosControl(elevatorTarget, 1, 3, 0.05, 0.2, true, 24);
+        elevatorPosControl = new AltPosControl(elevatorTarget, 0.5, 3, 0.1, 0.2, true, 45);
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
-        if (-leftYAxis > 0 || elevator.getHeight() > 39) {
-          elevator.move(-leftYAxis);
-        } else {
-          elevator.stop();
-        }
+        elevator.move(-leftYAxis);
         elevatorState = State.Elevator.CONTROLLED;
       } else {
         switch (elevatorState) {
@@ -422,16 +424,17 @@ public class Robot extends TimedRobot {
         if (movementController.buttonPressed(Button.B)) {
           hatchSystem.comeTogether();
         }
-        if (ballSystem.sensedBall()) {
+        /*if (ballSystem.sensedBall()) {
           seenBallCount++;
           if (seenBallCount < 3000 / 20) {
             ballSystem.pickupBall();
           }
         } else {
           seenBallCount = 0;
-        }
+        }*/
         // pick up ball
         if (movementController.buttonDown(Button.X)) {
+          hatchSystem.pushOutward();
           ballSystem.pickupBall();
         }
 
