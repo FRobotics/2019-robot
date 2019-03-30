@@ -310,26 +310,37 @@ public class Robot extends TimedRobot {
       if (actionsController.buttonPressed(Button.A)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          // low hatch
           elevatorTarget = 43.5;
         } else {
+          // low ball
           elevatorTarget = 53;
         }
       }
       if (actionsController.buttonPressed(Button.B)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          // medium hatch
           elevatorTarget = 61.5;
         } else {
+          // medium ball
           elevatorTarget = 73;
         }
       }
       if (actionsController.buttonPressed(Button.Y)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
+          // high hatch
           elevatorTarget = 80;
         } else {
+          // high ball
           elevatorTarget = 91;
         }
+      }
+      if (actionsController.buttonPressed(Button.X)) {
+        moveElevator = true;
+        // cargo ship ball
+        elevatorTarget = 60;
       }
       if (moveElevator) {
         elevatorState = State.Elevator.STOP;
