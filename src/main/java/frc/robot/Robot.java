@@ -330,11 +330,11 @@ public class Robot extends TimedRobot {
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
         driveTarget = -90 + this.driveTrain.getAngle();
         // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
-        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
+        drivePosControl = new AltPosControl(driveTarget, 1, 7.5, 0.05, 1, true, 35);
         driveState = State.Drive.TURN;
       } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
         driveTarget = 90 + this.driveTrain.getAngle();
-        drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
+        drivePosControl = new AltPosControl(driveTarget, 1, 7.5, 0.05, 1, true, 35);
         driveState = State.Drive.TURN;
       }
       break;
