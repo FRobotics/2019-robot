@@ -16,9 +16,9 @@ public class PosControl {
 
     private double halfWay;
 
-    private double lastPos;
-    private double lastSpeed;
-    private long lastTime;
+    //private double lastPos;
+    //private double lastSpeed;
+    //private long lastTime;
 
     private int onTargetCount;
 
@@ -52,8 +52,8 @@ public class PosControl {
         this.maybeTarget = Math.abs(target + (deadband * (target < 0 ? 1 : -1)));
         this.halfWay = maybeTarget / 2;
 
-        this.lastPos = 0;
-        this.lastSpeed = 0;
+        //this.lastPos = 0;
+        //this.lastSpeed = 0;
         this.onTargetCount = 0;
     }
 

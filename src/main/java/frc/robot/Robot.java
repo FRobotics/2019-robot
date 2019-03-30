@@ -30,7 +30,6 @@ import frc.robot.subsystems.base.CANDriveMotorPair;
 import frc.robot.subsystems.base.CANMotor;
 import frc.util.AltPosControl;
 import frc.util.CountdownTimer;
-import frc.util.PosControl;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -71,7 +70,7 @@ public class Robot extends TimedRobot {
   private CountdownTimer ballHatchTimer;
   private CountdownTimer elevatorTimer;
 
-  private long seenBallCount;
+  //private long seenBallCount;
 
   private int[] ntVariableHandles;
   private boolean robotRunning = true;
@@ -89,7 +88,7 @@ public class Robot extends TimedRobot {
     this.ballHatchState = State.BallHatch.CONTROLLED;
     this.elevatorState = State.Elevator.CONTROLLED;
 
-    this.seenBallCount = 0;
+    //this.seenBallCount = 0;
     this.autoEnabledFirst = false;
     this.modeStateTimer = new CountdownTimer();
     this.ballHatchTimer = new CountdownTimer();
