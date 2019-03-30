@@ -11,13 +11,14 @@ import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
@@ -114,7 +115,7 @@ public class Robot extends TimedRobot {
       while (robotRunning) {
         updateDashboard();
         try {
-          Thread.sleep(1000);
+          Thread.sleep(250);
         } catch (InterruptedException e) {
           System.out.println("Network Table thread interrupted:");
           e.printStackTrace();
@@ -125,39 +126,49 @@ public class Robot extends TimedRobot {
 
   private void initDashboard() {
     this.ntVariableHandles = new int[14];
-    //drive
-    genNTVHandle("leftMotorSpeed");
-    genNTVHandle("rightMotorSpeed");
-    genNTVHandle("leftMotorOutputPercent");
-    genNTVHandle("rightMotorOutputPercent");
-    genNTVHandle("angle");
-
-    genNTVHandle("leftMotorTarget");
-    genNTVHandle("rightMotorTarget");
-    genNTVHandle("leftMotorOutput");
-    genNTVHandle("rightMotorOutput");
-    genNTVHandle("driveTarget");
-    //not on practice
-    genNTVHandle("ballDetected");
-    genNTVHandle("elevatorHeight");
-    genNTVHandle("elevatorTarget");
-    genNTVHandle("elevatorOutput");
+    // drive: input
+    genNTHandle("leftMotorSpeed");
+    genNTHandle("rightMotorSpeed");
+    genNTHandle("leftMotorOutputPercent");
+    genNTHandle("rightMotorOutputPercent");
+    genNTHandle("angle");
+    genNTHandle("");
+    // drive: output
+    genNTHandle("leftMotorTarget");
+    genNTHandle("rightMotorTarget");
+    genNTHandle("leftMotorOutput");
+    genNTHandle("rightMotorOutput");
+    genNTHandle("driveTarget");
+    // drive: vision
+    // TODO: coordinate with vision people
+    genVisionNTHandle("onTarget");
+    genVisionNTHandle("targetAngle");
+    // not on practice
+    genNTHandle("ballDetected");
+    genNTHandle("elevatorHeight");
+    genNTHandle("elevatorTarget");
+    genNTHandle("elevatorOutput");
   }
 
   private void updateDashboard() {
     this.currentNTHandle = 0;
+    // drive: input
     setNTDouble(this.driveTrain.getLeftMotorSpeed());
     setNTDouble(this.driveTrain.getRightMotorSpeed());
     setNTDouble(this.driveTrain.getLeftMotorOutputPercent());
     setNTDouble(this.driveTrain.getRightMotorOutputPercent());
     setNTDouble(this.driveTrain.getAngle());
-
+    // drive: output
     setNTDouble(this.driveTrain.getLeftMotorTarget());
     setNTDouble(this.driveTrain.getRightMotorTarget());
     setNTDouble(this.driveTrain.getLeftMotorOutput());
     setNTDouble(this.driveTrain.getRightMotorOutput());
     setNTDouble(driveTarget);
-    if(!Constants.PRACTICE_ROBOT) {
+    // drive: vision
+    targetFound = getNTBoolean(false);
+    angleTarget = getNTDouble(0);
+    // not on practice
+    if (!Constants.PRACTICE_ROBOT) {
       setNTBoolean(this.ballSystem.sensedBall());
       setNTDouble(this.elevator.getHeight());
       setNTDouble(elevatorTarget);
@@ -165,18 +176,32 @@ public class Robot extends TimedRobot {
     }
   }
 
+  private static final NetworkTable robotTable = NetworkTableInstance.getDefault().getTable("robot");
+  private static final NetworkTable visionTable = NetworkTableInstance.getDefault().getTable("vision");
   private int currentNTHandle = 0;
 
-  private void genNTVHandle(String key) {
-    this.ntVariableHandles[currentNTHandle++] = SmartDashboard.getEntry(key).getHandle();
+  private void genNTHandle(String key) {
+    this.ntVariableHandles[currentNTHandle++] = robotTable.getEntry(key).getHandle();
+  }
+
+  private void genVisionNTHandle(String key) {
+    this.ntVariableHandles[currentNTHandle++] = visionTable.getEntry(key).getHandle();
   }
 
   private void setNTDouble(double value) {
     NetworkTablesJNI.setDouble(this.ntVariableHandles[currentNTHandle++], 0, value, false);
   }
 
+  private double getNTDouble(double defaultValue) {
+    return NetworkTablesJNI.getDouble(this.ntVariableHandles[currentNTHandle++], defaultValue);
+  }
+
   private void setNTBoolean(boolean value) {
     NetworkTablesJNI.setBoolean(this.ntVariableHandles[currentNTHandle++], 0, value, false);
+  }
+
+  private boolean getNTBoolean(boolean defaultValue) {
+    return NetworkTablesJNI.getBoolean(this.ntVariableHandles[currentNTHandle++], defaultValue);
   }
 
   /**
@@ -189,10 +214,10 @@ public class Robot extends TimedRobot {
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
     this.driveTrain.setRateLimit(2);
     if (!Constants.PRACTICE_ROBOT) {
-      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new Solenoid4150(new DoubleSolenoid(1, 3, 2)), new Solenoid4150(new DoubleSolenoid(1, 7, 6)),
-          new DigitalInput(2));
-      this.elevator.init(new CANMotor(new TalonSRX(9)).invert(), new Solenoid4150(new DoubleSolenoid(0, 5, 4)), new Solenoid4150(new DoubleSolenoid(1, 1, 0)),
-          new Counter(3));
+      this.ballSystem.init(new CANMotor(new VictorSPX(15)), new Solenoid4150(new DoubleSolenoid(1, 3, 2)),
+          new Solenoid4150(new DoubleSolenoid(1, 7, 6)), new DigitalInput(2));
+      this.elevator.init(new CANMotor(new TalonSRX(9)).invert(), new Solenoid4150(new DoubleSolenoid(0, 5, 4)),
+          new Solenoid4150(new DoubleSolenoid(1, 1, 0)), new Counter(3));
       this.hatchSystem.init(new Solenoid4150(new DoubleSolenoid(1, 5, 4)));
     }
     this.movementController.init(new Joystick(0));
@@ -280,9 +305,9 @@ public class Robot extends TimedRobot {
       }
     case CONTROLLED:
       this.generalPeriodic();
-      //if (movementController.buttonDown(Button.BACK)) {
-      //  this.testState = State.TestMode.RESET;
-      //}
+      // if (movementController.buttonDown(Button.BACK)) {
+      // this.testState = State.TestMode.RESET;
+      // }
       break;
     case RESET:
       this.reset();
@@ -312,6 +337,8 @@ public class Robot extends TimedRobot {
   private AltPosControl elevatorPosControl;
   private double elevatorTarget;
   private double elevatorOutput;
+  private double angleTarget;
+  private boolean targetFound;
 
   public void generalPeriodic() {
     // drive
@@ -327,14 +354,20 @@ public class Robot extends TimedRobot {
     case CONTROLLED:
       this.driveTrain.drive(-yAxis, xAxis);
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
-        driveTarget = -90 + this.driveTrain.getAngle();
+        driveTarget = this.driveTrain.getAngle() - 90;
         // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
         drivePosControl = new AltPosControl(driveTarget, 1, 7.5, 0.05, 1, true, 35);
         driveState = State.Drive.TURN;
       } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
-        driveTarget = 90 + this.driveTrain.getAngle();
+        driveTarget = this.driveTrain.getAngle() + 90;
         drivePosControl = new AltPosControl(driveTarget, 1, 7.5, 0.05, 1, true, 35);
         driveState = State.Drive.TURN;
+      } else if (Math.abs(movementController.getAxis(Axis.TRIGGER_LEFT)) > 0.2) {
+        if (targetFound) {
+          driveTarget = angleTarget;
+          drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
+          driveState = State.Drive.TURN;
+        }
       }
       break;
     case TURN:
@@ -380,7 +413,8 @@ public class Robot extends TimedRobot {
         elevatorTimer.update(now);
         elevatorTimer.start(100);
         this.elevatorTarget = elevatorTarget + elevator.getHeight();
-        // elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(), 0.1, 0.8, t -> 0.02 * t, 1);
+        // elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(),
+        // 0.1, 0.8, t -> 0.02 * t, 1);
         elevatorPosControl = new AltPosControl(elevatorTarget, 0.5, 3, 0.1, 0.2, true, 45);
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
@@ -423,14 +457,10 @@ public class Robot extends TimedRobot {
         if (movementController.buttonPressed(Button.B)) {
           hatchSystem.comeTogether();
         }
-        /*if (ballSystem.sensedBall()) {
-          seenBallCount++;
-          if (seenBallCount < 3000 / 20) {
-            ballSystem.pickupBall();
-          }
-        } else {
-          seenBallCount = 0;
-        }*/
+        /*
+         * if (ballSystem.sensedBall()) { seenBallCount++; if (seenBallCount < 3000 /
+         * 20) { ballSystem.pickupBall(); } } else { seenBallCount = 0; }
+         */
         // pick up ball
         if (movementController.buttonDown(Button.X)) {
           hatchSystem.pushOutward();
