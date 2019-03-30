@@ -11,9 +11,6 @@ import com.analog.adis16448.frc.ADIS16448_IMU;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -73,7 +70,6 @@ public class Robot extends TimedRobot {
 
   //private long seenBallCount;
 
-  private int[] ntVariableHandles;
   private boolean robotRunning = true;
 
   public Robot() {
@@ -108,100 +104,29 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private class NTVariableRunnable implements Runnable {
-    @Override
-    public void run() {
-      initDashboard();
-      while (robotRunning) {
-        updateDashboard();
-        try {
-          Thread.sleep(250);
-        } catch (InterruptedException e) {
-          System.out.println("Network Table thread interrupted:");
-          e.printStackTrace();
-        }
-      }
-    }
-  }
-
-  private void initDashboard() {
-    this.ntVariableHandles = new int[14];
+  public void updateDashboard() {
     // drive: input
-    genNTHandle("leftMotorSpeed");
-    genNTHandle("rightMotorSpeed");
-    genNTHandle("leftMotorOutputPercent");
-    genNTHandle("rightMotorOutputPercent");
-    genNTHandle("angle");
-    genNTHandle("");
+    NetworkTableVariables.leftMotorSpeed.setDouble(this.driveTrain.getLeftMotorSpeed());
+    NetworkTableVariables.rightMotorSpeed.setDouble(this.driveTrain.getRightMotorSpeed());
+    NetworkTableVariables.leftMotorOutputPercent.setDouble(this.driveTrain.getLeftMotorOutputPercent());
+    NetworkTableVariables.rightMotorOutputPercent.setDouble(this.driveTrain.getRightMotorOutputPercent());
+    NetworkTableVariables.angle.setDouble(this.driveTrain.getAngle());
     // drive: output
-    genNTHandle("leftMotorTarget");
-    genNTHandle("rightMotorTarget");
-    genNTHandle("leftMotorOutput");
-    genNTHandle("rightMotorOutput");
-    genNTHandle("driveTarget");
+    NetworkTableVariables.leftMotorTarget.setDouble(this.driveTrain.getLeftMotorTarget());
+    NetworkTableVariables.rightMotorTarget.setDouble(this.driveTrain.getRightMotorTarget());
+    NetworkTableVariables.leftMotorOutput.setDouble(this.driveTrain.getLeftMotorOutput());
+    NetworkTableVariables.rightMotorOutput.setDouble(this.driveTrain.getRightMotorOutput());
+    NetworkTableVariables.driveTarget.setDouble(driveTarget);
     // drive: vision
-    // TODO: coordinate with vision people
-    genVisionNTHandle("onTarget");
-    genVisionNTHandle("targetAngle");
-    // not on practice
-    genNTHandle("ballDetected");
-    genNTHandle("elevatorHeight");
-    genNTHandle("elevatorTarget");
-    genNTHandle("elevatorOutput");
-  }
-
-  private void updateDashboard() {
-    this.currentNTHandle = 0;
-    // drive: input
-    setNTDouble(this.driveTrain.getLeftMotorSpeed());
-    setNTDouble(this.driveTrain.getRightMotorSpeed());
-    setNTDouble(this.driveTrain.getLeftMotorOutputPercent());
-    setNTDouble(this.driveTrain.getRightMotorOutputPercent());
-    setNTDouble(this.driveTrain.getAngle());
-    // drive: output
-    setNTDouble(this.driveTrain.getLeftMotorTarget());
-    setNTDouble(this.driveTrain.getRightMotorTarget());
-    setNTDouble(this.driveTrain.getLeftMotorOutput());
-    setNTDouble(this.driveTrain.getRightMotorOutput());
-    setNTDouble(driveTarget);
-    // drive: vision
-    targetFound = getNTBoolean(false);
-    angleTarget = getNTDouble(0);
+    targetFound = NetworkTableVariables.onTarget.getBoolean(false);
+    angleTarget = NetworkTableVariables.targetAngle.getDouble(0);
     // not on practice
     if (!Constants.PRACTICE_ROBOT) {
-      setNTBoolean(this.ballSystem.sensedBall());
-      setNTDouble(this.elevator.getHeight());
-      setNTDouble(elevatorTarget);
-      setNTDouble(elevatorOutput);
+      NetworkTableVariables.ballDetected.setBoolean(this.ballSystem.sensedBall());
+      NetworkTableVariables.elevatorHeight.setDouble(this.elevator.getHeight());
+      NetworkTableVariables.elevatorTarget.setDouble(elevatorTarget);
+      NetworkTableVariables.elevatorOutput.setDouble(elevatorOutput);
     }
-  }
-
-  private static final NetworkTable robotTable = NetworkTableInstance.getDefault().getTable("robot");
-  private static final NetworkTable visionTable = NetworkTableInstance.getDefault().getTable("vision");
-  private int currentNTHandle = 0;
-
-  private void genNTHandle(String key) {
-    this.ntVariableHandles[currentNTHandle++] = robotTable.getEntry(key).getHandle();
-  }
-
-  private void genVisionNTHandle(String key) {
-    this.ntVariableHandles[currentNTHandle++] = visionTable.getEntry(key).getHandle();
-  }
-
-  private void setNTDouble(double value) {
-    NetworkTablesJNI.setDouble(this.ntVariableHandles[currentNTHandle++], 0, value, false);
-  }
-
-  private double getNTDouble(double defaultValue) {
-    return NetworkTablesJNI.getDouble(this.ntVariableHandles[currentNTHandle++], defaultValue);
-  }
-
-  private void setNTBoolean(boolean value) {
-    NetworkTablesJNI.setBoolean(this.ntVariableHandles[currentNTHandle++], 0, value, false);
-  }
-
-  private boolean getNTBoolean(boolean defaultValue) {
-    return NetworkTablesJNI.getBoolean(this.ntVariableHandles[currentNTHandle++], defaultValue);
   }
 
   /**
@@ -222,9 +147,7 @@ public class Robot extends TimedRobot {
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
-    Thread ntv = new Thread(new NTVariableRunnable());
-    ntv.setPriority(Thread.MIN_PRIORITY);
-    ntv.start();
+    NetworkTableVariables.start();
   }
 
   @Override
@@ -518,5 +441,9 @@ public class Robot extends TimedRobot {
   protected void finalize() {
     super.finalize();
     robotRunning = false;
+  }
+
+  public boolean isRunning() {
+    return this.robotRunning;
   }
 }
