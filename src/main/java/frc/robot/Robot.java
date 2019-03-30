@@ -147,7 +147,7 @@ public class Robot extends TimedRobot {
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
-    NetworkTableVariables.start();
+    NetworkTableVariables.start(this);
   }
 
   @Override
@@ -307,6 +307,7 @@ public class Robot extends TimedRobot {
       // elevator
       boolean moveElevator = false;
       double elevatorTarget = 0;
+      // TODO: tune these values
       if (actionsController.buttonPressed(Button.A)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {

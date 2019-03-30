@@ -8,8 +8,8 @@ public class NetworkTableVariables {
     public static Robot robot;
     private static Thread thread = new Thread(new NTVariableThread());
 
-    private static NetworkTable robotTable = NetworkTableInstance.getDefault().getTable("robot");
-    private static NetworkTable visionTable = NetworkTableInstance.getDefault().getTable("vision");
+    private static NetworkTable robotTable;
+    private static NetworkTable visionTable;
     // drive: input
     public static NetworkTableEntry leftMotorSpeed;
     public static NetworkTableEntry rightMotorSpeed;
@@ -33,6 +33,9 @@ public class NetworkTableVariables {
     public static NetworkTableEntry elevatorOutput;
 
     public static void init() {
+        robotTable = NetworkTableInstance.getDefault().getTable("robot");
+        visionTable = NetworkTableInstance.getDefault().getTable("vision");
+
         leftMotorSpeed = robotTable.getEntry("leftMotorSpeed");
         rightMotorSpeed = robotTable.getEntry("rightMotorSpeed");
         leftMotorOutputPercent = robotTable.getEntry("leftMotorOutputPercent");
@@ -58,10 +61,10 @@ public class NetworkTableVariables {
         @Override
         public void run() {
             NetworkTableVariables.init();
-            while (robot.isRunning()) {
+            while (robot.isRunning() && !thread.isInterrupted()) {
                 robot.updateDashboard();
                 try {
-                    Thread.sleep(250);
+                    Thread.sleep(20);
                 } catch (InterruptedException e) {
                     System.out.println("Network Table thread interrupted:");
                     e.printStackTrace();
@@ -70,12 +73,9 @@ public class NetworkTableVariables {
         }
     }
 
-    public static void start() {
+    public static void start(Robot robot) {
+        NetworkTableVariables.robot = robot;
         thread.setPriority(Thread.MIN_PRIORITY);
         thread.start();
-    }
-
-    public static void setRobot(Robot robot) {
-        NetworkTableVariables.robot = robot;
     }
 }
