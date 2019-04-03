@@ -5,7 +5,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class NetworkTableVariables {
-    public static Robot robot;
+    public static BenFabian robot;
     private static Thread thread = new Thread(new NTVariableThread());
 
     private static NetworkTable robotTable;
@@ -73,7 +73,7 @@ public class NetworkTableVariables {
         }
     }
 
-    public static void start(Robot robot) {
+    public static void start(BenFabian robot) {
         NetworkTableVariables.robot = robot;
         thread.setPriority(Thread.MIN_PRIORITY);
         thread.start();

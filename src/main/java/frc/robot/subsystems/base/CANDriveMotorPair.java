@@ -12,27 +12,27 @@ public class CANDriveMotorPair implements EncoderMotor {
     private BaseMotorController trevor;
     private BaseMotorController ahmad;
     
-    public CANDriveMotorPair(BaseMotorController master, BaseMotorController follower) {
-        this.trevor = master;
-        this.ahmad = follower;
+    public CANDriveMotorPair(BaseMotorController trevor, BaseMotorController ahmad) {
+        this.trevor = trevor;
+        this.ahmad = ahmad;
 
-        master.setNeutralMode(NeutralMode.Brake);
-        follower.setNeutralMode(NeutralMode.Brake);
+        trevor.setNeutralMode(NeutralMode.Brake);
+        ahmad.setNeutralMode(NeutralMode.Brake);
         
-        master.setSensorPhase(false);
-        follower.setSensorPhase(false);
+        trevor.setSensorPhase(false);
+        ahmad.setSensorPhase(false);
 
         int slotIdx = Constants.Drive.PID_LOOP_INDEX;
         int timeoutMS = Constants.Drive.TIMEOUT_MS;
 
-        master.config_kF(slotIdx, Constants.Drive.F, timeoutMS);
-        master.config_kP(slotIdx, Constants.Drive.P, timeoutMS);
-        master.config_kI(slotIdx, Constants.Drive.I, timeoutMS);
-        master.config_kD(slotIdx, Constants.Drive.D, timeoutMS);
-        master.config_IntegralZone(slotIdx, Constants.Drive.INTEGRAL_ZONE, timeoutMS);
+        trevor.config_kF(slotIdx, Constants.Drive.F, timeoutMS);
+        trevor.config_kP(slotIdx, Constants.Drive.P, timeoutMS);
+        trevor.config_kI(slotIdx, Constants.Drive.I, timeoutMS);
+        trevor.config_kD(slotIdx, Constants.Drive.D, timeoutMS);
+        trevor.config_IntegralZone(slotIdx, Constants.Drive.INTEGRAL_ZONE, timeoutMS);
 
-        master.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, slotIdx, timeoutMS);
-        follower.follow(master);
+        trevor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, slotIdx, timeoutMS);
+        ahmad.follow(trevor);
     }
 
     @Override
