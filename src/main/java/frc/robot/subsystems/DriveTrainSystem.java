@@ -126,6 +126,14 @@ public class DriveTrainSystem {
         return this.rightMotor.getOutputPercent();
     }
 
+    public double getLeftMotorDistance() {
+        return this.leftMotor.getDistance();
+    }
+
+    public double getRightMotorDistance() {
+        return this.rightMotor.getDistance();
+    }
+
     public double getAngle() {
         return gyro.getAngleZ();
     }

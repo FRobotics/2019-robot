@@ -68,4 +68,9 @@ public class CANDriveMotorPair implements EncoderMotor {
         return this;
     }
 
+    @Override
+    public double getDistance() {
+        return this.trevor.getSelectedSensorPosition() * Constants.Drive.DISTANCE_MULTIPLIER;
+    }
+
 }

@@ -117,6 +117,8 @@ public class BenFabian extends TimedRobot {
     NetworkTableVariables.leftMotorOutput.setDouble(this.driveTrain.getLeftMotorOutput());
     NetworkTableVariables.rightMotorOutput.setDouble(this.driveTrain.getRightMotorOutput());
     NetworkTableVariables.driveTarget.setDouble(driveTarget);
+    NetworkTableVariables.leftMotorDistance.setDouble(this.driveTrain.getLeftMotorDistance());
+    NetworkTableVariables.rightMotorDistance.setDouble(this.driveTrain.getRightMotorDistance());
     // drive: vision
     targetFound = NetworkTableVariables.onTarget.getBoolean(false);
     angleTarget = NetworkTableVariables.targetAngle.getDouble(0);

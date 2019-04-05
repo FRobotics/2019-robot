@@ -22,6 +22,8 @@ public class NetworkTableVariables {
     public static NetworkTableEntry leftMotorOutput;
     public static NetworkTableEntry rightMotorOutput;
     public static NetworkTableEntry driveTarget;
+    public static NetworkTableEntry leftMotorDistance;
+    public static NetworkTableEntry rightMotorDistance;
     // drive: vision
     // TODO: coordinate with vision people
     public static NetworkTableEntry onTarget;
@@ -47,6 +49,8 @@ public class NetworkTableVariables {
         leftMotorOutput = robotTable.getEntry("leftMotorOutput");
         rightMotorOutput = robotTable.getEntry("rightMotorOutput");
         driveTarget = robotTable.getEntry("driveTarget");
+        leftMotorDistance = robotTable.getEntry("leftMotorDistance");
+        rightMotorDistance = robotTable.getEntry("rightMotorDistance");
 
         onTarget = visionTable.getEntry("onTarget");
         targetAngle = visionTable.getEntry("targetAngle");

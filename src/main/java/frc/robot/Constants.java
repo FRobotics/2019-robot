@@ -23,7 +23,8 @@ public class Constants {
         public static final double I = 0.0012;
         public static final double D = 0.01;
         public static final int INTEGRAL_ZONE = 150;
-        public static final double OUTPUT_MULTIPLIER = 1 / (WHEEL_CIRCUMFERENCE / COUNTS_PER_REVOLUTION * 10);
-        public static final double INPUT_MULTIPLIER = 1 / OUTPUT_MULTIPLIER;
+        public static final double DISTANCE_MULTIPLIER = WHEEL_CIRCUMFERENCE / COUNTS_PER_REVOLUTION;
+        public static final double INPUT_MULTIPLIER = 10 * DISTANCE_MULTIPLIER;
+        public static final double OUTPUT_MULTIPLIER = 1 / INPUT_MULTIPLIER;
     }
 }
