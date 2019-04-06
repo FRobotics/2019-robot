@@ -52,8 +52,8 @@ public class NetworkTableVariables {
         leftMotorDistance = robotTable.getEntry("leftMotorDistance");
         rightMotorDistance = robotTable.getEntry("rightMotorDistance");
 
-        onTarget = visionTable.getEntry("onTarget");
-        targetAngle = visionTable.getEntry("targetAngle");
+        onTarget = visionTable.getEntry("TargetFound");
+        targetAngle = visionTable.getEntry("TargetAngle");
 
         ballDetected = robotTable.getEntry("ballDetected");
         elevatorHeight = robotTable.getEntry("elevatorHeight");

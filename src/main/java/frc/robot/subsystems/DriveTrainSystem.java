@@ -83,8 +83,8 @@ public class DriveTrainSystem {
      * @param speed - the speed at which the robot should turn; should be -2 to +2
      */
     public void turn(double speed) {
-        this.setLeftMotorSpeed(speed / 1.33);
-        this.setRightMotorSpeed(-speed / 1.33);
+        this.setLeftMotorSpeed(speed * 0.75);
+        this.setRightMotorSpeed(-speed * 0.75);
     }
 
     /**
@@ -146,6 +146,23 @@ public class DriveTrainSystem {
             this.setSpeed(fb);
         } else if (fb == 0) {
             this.turn(lr*0.75);
+        } else {
+            double hlr = lr * 0.75;
+
+            double left = fb + hlr;
+            double right = fb - hlr;
+            this.setLeftMotorSpeed(left);
+            this.setRightMotorSpeed(right);
+        }
+    }
+
+    public void driveVision(double fb, double lr) {
+        double deadband = 0.2;
+        fb = smooth(fb, deadband)*10;
+        if (lr == 0) {
+            this.setSpeed(fb);
+        } else if (fb == 0) {
+            this.turn(lr);
         } else {
             double hlr = lr * 0.75;
 

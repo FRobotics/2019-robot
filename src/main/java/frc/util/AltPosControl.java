@@ -2,7 +2,7 @@ package frc.util;
 
 public class AltPosControl {
 
-	private final double target;
+	private double target;
 	private final double minSpeed;
 	private final double maxSpeed;
 	private final double rate;
@@ -65,5 +65,9 @@ public class AltPosControl {
 
 	public double getDeadband() {
 		return deadband;
+	}
+
+	public void setTarget(double target) {
+		this.target = target;
 	}
 }

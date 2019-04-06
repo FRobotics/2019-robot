@@ -265,6 +265,8 @@ public class BenFabian extends TimedRobot {
   private double angleTarget;
   private boolean targetFound;
 
+  private boolean usingVision;
+
   public void generalPeriodic() {
     // drive
     double xAxis = movementController.getAxis(Axis.RIGHT_X);
@@ -278,6 +280,7 @@ public class BenFabian extends TimedRobot {
     switch (this.driveState) {
     case CONTROLLED:
       this.driveTrain.drive(-yAxis, xAxis);
+      usingVision = false;
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
         driveTarget = this.driveTrain.getAngle() - 90;
         // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
@@ -290,17 +293,25 @@ public class BenFabian extends TimedRobot {
       } else if (Math.abs(movementController.getAxis(Axis.TRIGGER_LEFT)) > 0.2) {
         if (targetFound) {
           driveTarget = angleTarget;
-          drivePosControl = new AltPosControl(driveTarget, 1, 6, 0.05, 1, true, 45);
+          drivePosControl = new AltPosControl(driveTarget, 0.5, 2, 0.01, 0.2, true, 10);
           driveState = State.Drive.TURN;
+          usingVision = true;
         }
       }
       break;
     case TURN:
-      if (drivePosControl.onTarget() || Math.abs(xAxis) > 0.2 || Math.abs(yAxis) > 0.2) {
+      if(usingVision) {
+        drivePosControl.setTarget(angleTarget);
+      }
+      if (drivePosControl.onTarget() || Math.abs(xAxis) > 0.2 || (!usingVision && Math.abs(yAxis) > 0.2)) {
         this.driveState = State.Drive.CONTROLLED;
       } else {
         double speed = drivePosControl.getSpeed(this.driveTrain.getAngle());
-        this.driveTrain.turn(speed);
+        if(usingVision) {
+          this.driveTrain.driveVision(-yAxis, speed);
+        } else {
+          this.driveTrain.turn(speed);
+        }
       }
       break;
     }
