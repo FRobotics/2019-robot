@@ -20,6 +20,7 @@ import frc.robot.input.Axis;
 import frc.robot.input.Button;
 import frc.robot.input.Controller;
 import frc.robot.subsystems.BallSystem;
+import frc.robot.subsystems.ClimbSystem;
 import frc.robot.subsystems.DriveTrainSystem;
 import frc.robot.subsystems.ElevatorSystem;
 import frc.robot.subsystems.HatchSystem;
@@ -46,6 +47,7 @@ public class BenFabian extends TimedRobot {
   private BallSystem ballSystem;
   private ElevatorSystem elevator;
   private HatchSystem hatchSystem;
+  private ClimbSystem climbSystem;
 
   // input
 
@@ -68,7 +70,7 @@ public class BenFabian extends TimedRobot {
   private CountdownTimer ballHatchTimer;
   private CountdownTimer elevatorTimer;
 
-  //private long seenBallCount;
+  // private long seenBallCount;
 
   private boolean robotRunning = true;
 
@@ -77,6 +79,7 @@ public class BenFabian extends TimedRobot {
     this.ballSystem = new BallSystem();
     this.elevator = new ElevatorSystem();
     this.hatchSystem = new HatchSystem();
+    this.climbSystem = new ClimbSystem();
 
     this.movementController = new Controller();
     this.actionsController = new Controller();
@@ -85,7 +88,7 @@ public class BenFabian extends TimedRobot {
     this.ballHatchState = State.BallHatch.CONTROLLED;
     this.elevatorState = State.Elevator.CONTROLLED;
 
-    //this.seenBallCount = 0;
+    // this.seenBallCount = 0;
     this.autoEnabledFirst = false;
     this.modeStateTimer = new CountdownTimer();
     this.ballHatchTimer = new CountdownTimer();
@@ -101,6 +104,7 @@ public class BenFabian extends TimedRobot {
       this.ballSystem.reset();
       this.elevator.reset();
       this.hatchSystem.reset();
+      this.climbSystem.reset();
     }
   }
 
@@ -139,6 +143,7 @@ public class BenFabian extends TimedRobot {
   public void robotInit() {
     this.driveTrain.init(new CANDriveMotorPair(new TalonSRX(14), new TalonSRX(13)),
         new CANDriveMotorPair(new TalonSRX(10), new TalonSRX(12)), new ADIS16448_IMU());
+    // TODO: make sure rate limiting is working and tune it
     this.driveTrain.setRateLimit(2);
     if (!Constants.PRACTICE_ROBOT) {
       this.ballSystem.init(new CANMotor(new VictorSPX(15)), new Solenoid4150(new DoubleSolenoid(1, 3, 2)),
@@ -146,6 +151,8 @@ public class BenFabian extends TimedRobot {
       this.elevator.init(new CANMotor(new TalonSRX(9)).invert(), new Solenoid4150(new DoubleSolenoid(0, 5, 4)),
           new Solenoid4150(new DoubleSolenoid(1, 1, 0)), new Counter(3));
       this.hatchSystem.init(new Solenoid4150(new DoubleSolenoid(1, 5, 4)));
+      this.climbSystem.init(new Solenoid4150(new DoubleSolenoid(0, 2, 3)),
+          new Solenoid4150(new DoubleSolenoid(0, 1, 0)));
     }
     this.movementController.init(new Joystick(0));
     this.actionsController.init(new Joystick(1));
@@ -283,7 +290,8 @@ public class BenFabian extends TimedRobot {
       usingVision = false;
       if (movementController.buttonPressed(Button.LEFT_BUMPER)) {
         driveTarget = this.driveTrain.getAngle() - 90;
-        // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t -> t * 0.01, 1);
+        // drivePosControl = new PosControl(driveTarget, driveTrain.getAngle(), 1, 5, t
+        // -> t * 0.01, 1);
         drivePosControl = new AltPosControl(driveTarget, 1, 7.5, 0.05, 1, true, 35);
         driveState = State.Drive.TURN;
       } else if (movementController.buttonPressed(Button.RIGHT_BUMPER)) {
@@ -300,14 +308,14 @@ public class BenFabian extends TimedRobot {
       }
       break;
     case TURN:
-      if(usingVision) {
+      if (usingVision) {
         drivePosControl.setTarget(angleTarget);
       }
       if (drivePosControl.onTarget() || Math.abs(xAxis) > 0.2 || (!usingVision && Math.abs(yAxis) > 0.2)) {
         this.driveState = State.Drive.CONTROLLED;
       } else {
         double speed = drivePosControl.getSpeed(this.driveTrain.getAngle());
-        if(usingVision) {
+        if (usingVision) {
           this.driveTrain.driveVision(-yAxis, speed);
         } else {
           this.driveTrain.turn(speed);
@@ -318,14 +326,18 @@ public class BenFabian extends TimedRobot {
     // if it's the real robot
     if (!Constants.PRACTICE_ROBOT) {
       // elevator
+      elevator.updateHeight();
+      if (actionsController.buttonDown(Button.START)) {
+        elevator.setNoHeightIssue();
+      }
+
       boolean moveElevator = false;
       double elevatorTarget = 0;
-      // TODO: tune these values
       if (actionsController.buttonPressed(Button.A)) {
         moveElevator = true;
         if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
           // low hatch
-          elevatorTarget = 43.5;
+          elevatorTarget = 40.5;
         } else {
           // low ball
           elevatorTarget = 53;
@@ -341,29 +353,14 @@ public class BenFabian extends TimedRobot {
           elevatorTarget = 73;
         }
       }
-      if (actionsController.buttonPressed(Button.Y)) {
-        moveElevator = true;
-        if (actionsController.buttonDown(Button.RIGHT_BUMPER)) {
-          // high hatch
-          elevatorTarget = 80;
-        } else {
-          // high ball
-          elevatorTarget = 91;
-        }
-      }
-      if (actionsController.buttonPressed(Button.X)) {
-        moveElevator = true;
-        // cargo ship ball
-        elevatorTarget = 60;
-      }
       if (moveElevator) {
         elevatorState = State.Elevator.STOP;
         elevatorTimer.update(now);
         elevatorTimer.start(100);
-        this.elevatorTarget = elevatorTarget + elevator.getHeight();
+        this.elevatorTarget = elevatorTarget;
         // elevatorPosControl = new PosControl(elevatorTarget, elevator.getHeight(),
         // 0.1, 0.8, t -> 0.02 * t, 1);
-        elevatorPosControl = new AltPosControl(elevatorTarget, 0.5, 3, 0.1, 0.2, true, 45);
+        elevatorPosControl = new AltPosControl(elevatorTarget, 0.5, 3, 0.1, 0.5, true, 45);
       }
       double leftYAxis = actionsController.getAxis(Axis.RIGHT_Y);
       if (leftYAxis > 0.2 || leftYAxis < -0.2) {
@@ -372,12 +369,17 @@ public class BenFabian extends TimedRobot {
       } else {
         switch (elevatorState) {
         case GOTO:
+          if (elevator.heightIssue()) {
+            elevatorState = State.Elevator.CONTROLLED;
+            break;
+          }
           double speed = elevatorPosControl.getSpeed(elevator.getHeight());
           elevatorOutput = speed;
           elevator.move(speed);
           if (elevatorPosControl.onTarget()) {
             elevatorState = State.Elevator.CONTROLLED;
           }
+
           break;
         case STOP:
           elevatorTimer.update(now);
@@ -390,6 +392,17 @@ public class BenFabian extends TimedRobot {
           elevator.stop();
           break;
         }
+      }
+      // climb
+      if (actionsController.buttonPressed(Button.Y)) {
+        this.climbSystem.raiseFront();
+      } else {
+        this.climbSystem.lowerFront();
+      }
+      if (actionsController.buttonPressed(Button.X)) {
+        this.climbSystem.raiseBack();
+      } else {
+        this.climbSystem.lowerBack();
       }
       // ball and hatch
       if (!movementController.buttonDown(Button.X)) {

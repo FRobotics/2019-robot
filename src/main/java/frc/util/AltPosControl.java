@@ -28,7 +28,6 @@ public class AltPosControl {
 	}
 	
 	public boolean onTarget() {
-		System.out.println("TEST: " + rate);
 		return onTargetCount >= ON_TARGET_GOAL;
 	}
 

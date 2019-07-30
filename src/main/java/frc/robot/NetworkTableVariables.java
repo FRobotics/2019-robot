@@ -25,7 +25,6 @@ public class NetworkTableVariables {
     public static NetworkTableEntry leftMotorDistance;
     public static NetworkTableEntry rightMotorDistance;
     // drive: vision
-    // TODO: coordinate with vision people
     public static NetworkTableEntry onTarget;
     public static NetworkTableEntry targetAngle;
     // not on practice
